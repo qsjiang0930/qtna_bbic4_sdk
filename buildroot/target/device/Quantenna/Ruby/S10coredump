@@ -1,0 +1,9 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+core_path="/var/log/core"
+
+# Set the CORE DUMP kernel parameters
+mkdir -p $core_path
+echo "$core_path/core_t%t_%e" > /proc/sys/kernel/core_pattern
+

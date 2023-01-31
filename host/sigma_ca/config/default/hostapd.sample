@@ -1,0 +1,18 @@
+# change this to the interface on NPU connected to Quantenna module
+qlink_iface=agl0
+
+# change this to MAC address of interface on Quantenna module, attached to qlink
+qlink_server_addr=00:26:86:00:00:00
+
+# name of primary interface
+wifi_iface=wifi0
+
+# interface hardware mode
+wifi_hw_mode=a
+
+# for empty SSID the new randow one will be generated
+wifi_ssid=
+
+# for empty passphrase the new randow one will be generated
+wifi_passphrase=
+

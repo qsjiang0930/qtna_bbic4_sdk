@@ -1,0 +1,75 @@
+#!/bin/sh
+
+# This script is to start and stop maui service.
+
+search_pid() {
+	pattern=$1
+	echo $(ps | grep "$pattern" | grep -v "grep " | awk '{print $1}')
+}
+
+kill_process() {
+	pid=$(search_pid "$1")
+	if [ -n "$pid" ]; then
+		kill $pid
+	fi
+}
+
+start() {
+	export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/scripts:/usr/local/bin
+	export LD_LIBRARY_PATH=/lib:/usr/lib
+	maui=`get_wifi_config wifi0 maui`
+	if [ $? -ne 0 ] || [ "$maui" = "1" ]; then
+		echo "MAUI service started"
+		if [ -f /sbin/qharvestd ]; then
+			if [ -z "$(search_pid start-ntpclient)" ]; then
+				/scripts/start-ntpclient &
+			fi
+
+			if [ -d /mnt/jffs2/qharvestd ]; then
+				rm -rf /mnt/jffs2/qharvestd
+			fi
+
+			if [ ! -f /mnt/jffs2/qharvestd.conf ]; then
+				cp -f /etc/qharvestd.conf /mnt/jffs2/qharvestd.conf
+			fi
+
+			/scripts/cmdloop /sbin/qharvestd -c/mnt/jffs2/qharvestd.conf &
+		fi
+	else
+		echo "MAUI service disabled"
+	fi
+}
+
+stop() {
+	echo "Stopping MAUI service"
+	ntpcli=$(get_wifi_config global ntpclient)
+	if [ "$ntpcli" != "1" ]; then
+		kill_process "start-ntpclient"
+		killall -q ntpclient
+	fi
+	kill_process "/bin/sh /scripts/cmdloop /sbin/qharvestd -c/mnt/jffs2"
+	kill_process "qharvestd"
+}
+
+restart() {
+        stop
+        start
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart|reload)
+        restart
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?
+

@@ -1,0 +1,20 @@
+about_resource: qwebapi
+name: Quantenna WWW API
+version: 1.0
+description: Web interface API for quantenna devices
+
+license_name: |
+    BSD 3-clause
+    GNU General Public License Version 2
+license_expression: bsd-new or gpl-2.0
+license_file: |
+    ../../../bsd-new.LICENSE
+    ../../../gpl-2.0.LICENSE
+
+copyright: |
+    Copyright (c) 2015-2018 Quantenna Communications Inc
+owner: Quantenna Communications Inc
+
+redistribute: n
+attribute: y
+modified: n

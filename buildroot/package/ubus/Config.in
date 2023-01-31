@@ -1,0 +1,7 @@
+config BR2_PACKAGE_UBUS
+	bool "ubus"
+	default n
+	help
+	  ubus provides communication between various daemons and applications
+
+	  https://openwrt.org/docs/techref/ubus

@@ -1,0 +1,9 @@
+#!/bin/sh
+dev=0
+if [ "$1" != "" ]
+then
+	dev=$1
+fi
+vap=wifi$dev
+
+call_qcsapi reg_chan_txpower_path_get $vap

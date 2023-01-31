@@ -1,0 +1,289 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+
+. ${base_scripts}/start-helpers.sh
+. import_qtnenv
+
+soniq_search_master() {
+	if [ $soniq_enabled != 1 ]; then
+		return
+	fi
+
+	if [ "$qfdr_master_board" = "y" ]; then
+		qcomm_cli search_master 2>/dev/null
+	else
+		perform_cmd_on_remote "qcomm_cli search_master 2>/dev/null"
+	fi
+}
+
+soniq_get_ap_cfg_state() {
+	if [ $soniq_enabled != 1 ]; then
+		return
+	fi
+
+	if [ "$qfdr_master_board" = "y" ]; then
+		qcomm_cli show_ap_cfg_state 2>/dev/null
+	else
+		perform_cmd_on_remote "qcomm_cli show_ap_cfg_state 2>/dev/null"
+	fi
+}
+
+soniq_set_backbone() {
+	local_ssid=$(get_associated_ssid)
+	if [ -n "$local_ssid" ]; then
+		addr=$(call_qcsapi -u get_mac_addr wifi0)
+	else
+		echo_with_logging "[QFDR]: no avaliable backbone link to set"
+		return
+	fi
+
+	if [ "$qfdr_master_board" = "y" ]; then
+		qcomm_cli set_backbone $addr
+	else
+		perform_cmd_on_remote "qcomm_cli set_backbone $addr"
+	fi
+}
+
+update_qfdr_ap() {
+	if [ "$qfdr_auto_update_ap" != "y" ]; then
+		return
+	fi
+
+	if qfdr_csa check_mark; then
+		echo_with_logging "[QFDR]: don't auto update AP due to CSA"
+		return
+	fi
+
+	if [ "$(soniq_get_ap_cfg_state)" = "configured" ]; then
+		echo_with_logging "[QFDR]: don't auto update AP due to ap cfg already configured by SONiQ"
+		return
+	fi
+
+	assoc_ssid=$(get_associated_ssid)
+	if ! extract_profile "$assoc_ssid" $qfdr_sta_profile.new; then
+		echo_with_logging "[QFDR]: $qfdr_local_band fail to extract profile for \"$assoc_ssid\""
+		return
+	fi
+
+	if ! cmp -s $qfdr_sta_profile $qfdr_sta_profile.new 2>/dev/null; then
+		echo_with_logging "[QFDR]: update qfdr AP"
+		run_in_background build_qfdr_ap all "$assoc_ssid"
+		perform_cmd_on_remote "build_qfdr_ap all \"$assoc_ssid\""
+	fi
+	rm -f $qfdr_sta_profile.new
+
+	if [ "$qfdr_sync_qtn_ap" = "y" ]; then
+		# set qfdr_sync_qtn_ap to y in generate_qfdr_env if you want QV864 sync config from remote QTN AP like QHop
+		run_in_background qfdr_sync_qtn_ap
+		perform_cmd_on_remote "run_in_background qfdr_sync_qtn_ap"
+	fi
+}
+
+qfdr_connection_led() {
+	if [ "$platform_id" != "482" ]; then
+		return
+	fi
+
+	if [ "$qfdr_master_board" = "y" ]; then
+		call_qcsapi_sockrpc --host $qfdr_remote_ip set_led 16 $1
+	else
+		call_qcsapi set_led 1 $1
+	fi
+}
+
+check_disconnected_event()
+{
+	local count=0
+	local result=1
+	while [ $count -lt 3 ]; do
+		if [ "$(get_associated_ssid)" = "" ]; then
+			result=0
+			break
+		fi
+		sleep 1
+		let "count++"
+	done
+	return $result
+}
+
+check_connected_event()
+{
+	local count=0
+	local result=1
+	while [ $count -lt 3 ]; do
+		if [ "$(get_associated_ssid)" != "" ]; then
+			result=0
+			break
+		fi
+		sleep 1
+		let "count++"
+	done
+	return $result
+}
+
+check_disconnected_event_nowait()
+{
+	if [ "$(get_associated_ssid)" = "" ]; then
+		return 0
+	fi
+	return 1
+}
+
+check_connected_event_nowait()
+{
+	if [ "$(get_associated_ssid)" != "" ]; then
+		return 0
+	fi
+	return 1
+}
+
+if [ "$qfdr_platform" != "1" ]; then
+	echo_with_logging "[QFDR]: can only start $0 on full duplex repeater platform"
+	exit
+fi
+
+wifi_mode=$(get_wifi_config wifi0 mode)
+if [ "$wifi_mode" = "ap" ]; then
+	tri_band_ap=1
+elif [ "$wifi_mode" = "repeater" ]; then
+	tri_band_ap=0
+else
+	echo_with_logging "[QFDR]: invalid WiFi mode $wifi_mode"
+	exit
+fi
+
+if [ "$(get_wifi_config wifi0 qsteer)" = "1" ]; then
+	soniq_enabled=1
+else
+	soniq_enabled=0
+fi
+
+if [ $tri_band_ap = 0 ]; then
+	qfdr_ap disable
+	qfdr_sta enable
+fi
+
+connected=0
+iwevent | while read time dev message; do
+	if [ "$dev" != "wifi0" ]; then
+		case $message in
+			"Custom driver event:Dot11Msg:Client connected"*)
+				#client=$(echo $message | grep -o "\[.*\]" | awk '{print $1}')
+				client=$(echo $message | grep -o "\[.................\]")
+				echo_with_logging "[QFDR][$(awk '{print $1}' /proc/uptime)]: $client connect to $dev"
+				;;
+			*)
+				;;
+		esac
+		continue
+	fi
+	case $message in
+	"Custom driver event:Dot11Msg:Connected to AP"*)
+		if [ $tri_band_ap = 1 ]; then
+			continue
+		fi
+
+		if ! check_connected_event_nowait; then
+			# echo_with_logging "[QFDR]: receive false connected event"
+			continue
+		fi
+
+		echo_with_logging "[QFDR][$(awk '{print $1}' /proc/uptime)]: connected to AP"
+		qfdr_connection_led 1
+
+		update_qfdr_ap
+
+		# remote: disable sta, enable ap
+		perform_cmd_on_remote "qfdr_sta disable"
+		perform_cmd_on_remote "qfdr_ap enable"
+		# local: disable ap
+		qfdr_ap disable
+
+		soniq_search_master
+		soniq_set_backbone
+		connected=1
+		;;
+	"Custom driver event:Dot11Msg:Disconnected from AP"*)
+		if [ $tri_band_ap = 1 ]; then
+			continue
+		fi
+
+		if [ $connected != 1 ]; then
+			# echo_with_logging "[QFDR][$(awk '{print $1}' /proc/uptime)]: ignore disconnected event"
+			continue
+		fi
+
+		if ! check_disconnected_event_nowait; then
+			# echo_with_logging "[QFDR][$(awk '{print $1}' /proc/uptime)]: receive false disconnected event"
+			continue
+		fi
+
+		echo_with_logging "[QFDR][$(awk '{print $1}' /proc/uptime)]: disconnected from AP"
+		qfdr_connection_led 0
+		# remote: enable sta
+		perform_cmd_on_remote "qfdr_sta enable"
+		# local: do nothing
+		connected=0
+		;;
+	"Custom driver event:Dot11Msg:[CSA-OTHER-BAND]"*)
+		if [ $tri_band_ap = 1 ]; then
+			continue
+		fi
+
+		if [ $connected != 1 ]; then
+			# echo_with_logging "[QFDR][$(awk '{print $1}' /proc/uptime)]: ignore CSA-OTHER-BAND event"
+			continue
+		fi
+
+		chan=$(echo $message | grep -o "CHAN=[0-9]*" | cut -c6-)
+		echo_with_logging "[QFDR][$(awk '{print $1}' /proc/uptime)]: local CSA-OTHER-BAND channel=$chan"
+		perform_cmd_on_remote "echo \"[QFDR][\$(awk '{print \$1}' /proc/uptime)]: remote CSA-OTHER-BAND channel=$chan\" > /dev/console"
+		if [ "$qfdr_auto_update_ap" = "y" ]; then
+			# if qfdr_auto_update_ap is enabled, we need to mark csa on remote radio, then, remote radio will not auto update ap.
+			# the mark will disappear automatically after 5 seconds
+			perform_cmd_on_remote "run_in_background qfdr_csa mark"
+		fi
+		qfdr_csa switch_role
+		;;
+	"Custom driver event:WPS-BUTTON.indication")
+		# this event happens when HW WPS push button is pressed
+		if [ "$qfdr_hw_pbc_on_board" != "y" ]; then
+			echo_with_logging "[QFDR]: ignore HW PBC event"
+			continue
+		fi
+		qfdr_wps_proxy report_button_press wifi0 hw
+		;;
+	"Custom driver event:Dot11Msg:WPS success")
+		# this event happens when WPS PIN/PBC process succeed on AP/Station mode
+		if [ "$qfdr_auto_update_ap" != "y" ]; then
+			continue
+		fi
+		if [ "$(call_qcsapi get_qfdr_state wifi0)" = "1" ]; then
+			# radio is STA role, ask peer to sync the wpa_supplicant.conf,
+			# add with-apply option for the case that remote AP reboot suddenly
+			echo_with_logging "[QFDR]: $qfdr_local_band associate with AP using WPS, ask $qfdr_remote_band to sync wpa_supplicant.conf"
+			perform_cmd_on_remote "qfdr_sync_config supplicant with-apply"
+		else
+			# radio is AP role, hostapd.conf may be changed by registrar on WPS unconfigured state
+			# ask peer to sync the hostapd.conf on tri-band AP mode for this case
+			if [ $tri_band_ap != 1 ]; then
+				continue
+			fi
+			echo_with_logging "[QFDR]: $qfdr_local_band add client using WPS and hostapd.conf may be changed, ask $qfdr_remote_band to sync"
+			perform_cmd_on_remote "qfdr_sync_config hostapd with-apply"
+		fi
+		;;
+	"Custom driver event:Dot11Msg:WPS AP PIN SUCESS")
+		# this event happens when device on AP mode is configured by external registrar using PIN method
+		# ask peer to sync the hostapd.conf
+		if [ "$qfdr_auto_update_ap" != "y" ]; then
+			continue
+		fi
+		echo_with_logging "[QFDR]: $qfdr_local_band is configured by external registrar, ask $qfdr_remote_band to sync"
+		perform_cmd_on_remote "qfdr_sync_config hostapd with-apply"
+		;;
+	*)
+		;;
+	esac
+done

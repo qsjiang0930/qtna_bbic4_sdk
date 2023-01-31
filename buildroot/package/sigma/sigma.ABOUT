@@ -1,0 +1,20 @@
+about_resource: sigma
+name: Sigma Control Agent
+version: 8.1.1
+homepage_url: Provided as part of the SDK.
+description: The Sigma test environment is a software platform developed by
+    Wi-Fi Alliance to support program development and certification.
+    The Sigma platform is an automated test tool that executes a specific
+    Wi-Fi Alliance test plan to certify a member product using designated test bed hardware
+notes: Quantenna written/provide
+
+license_name: ISC License
+license_expression: isc
+license_file: isc.LICENSE
+
+copyright: Copyright (c) 2017 Quantenna Communications Inc
+owner: Quantenna Communications Inc
+
+redistribute: n
+attribute: y
+modified: n

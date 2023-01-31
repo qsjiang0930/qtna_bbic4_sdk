@@ -1,0 +1,2 @@
+#! /bin/sh
+echo "delete rc_calib.cal" > /proc/bootcfg/env

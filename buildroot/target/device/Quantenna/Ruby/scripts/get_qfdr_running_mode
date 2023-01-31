@@ -1,0 +1,15 @@
+#! /bin/sh
+
+mode_file="/tmp/qfdr_running_mode"
+
+if [ ! -f $mode_file ]; then
+	echo "Station"
+	exit 1
+fi
+
+mode=$(cat $mode_file)
+if [ "$mode" = "ap" ]; then
+	echo "Access point"
+else
+	echo "Station"
+fi

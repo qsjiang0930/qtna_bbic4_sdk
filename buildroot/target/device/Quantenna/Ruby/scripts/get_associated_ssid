@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if [ "$(call_qcsapi get_mode wifi0)" != "Station" ]; then
+	return
+fi
+
+if [ "$(call_qcsapi get_bssid wifi0)" = "00:00:00:00:00:00" ]; then
+	return
+fi
+
+ssid=$(call_qcsapi get_SSID wifi0)
+if [ "$(echo $ssid | grep "QCS API error")" != "" ]; then
+	# TODO: exclude the case that the SSID user set contains "QCS API error"
+	return
+fi
+
+echo $ssid

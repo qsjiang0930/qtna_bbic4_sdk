@@ -1,0 +1,41 @@
+diff -Nru php-5.0.5.orig/ext/exif/exif.c php-5.0.5/ext/exif/exif.c
+--- php-5.0.5.orig/ext/exif/exif.c	2018-05-21 12:32:38.668364972 +0300
++++ php-5.0.5/ext/exif/exif.c	2018-05-21 12:33:04.260043241 +0300
+@@ -1501,7 +1501,7 @@
+ 	if (!size) {
+ 		data = NULL;
+ 	} else if (data == NULL) {
+-		data = emalloc(size);
++		data = ecalloc(size, 1);
+ 	}
+ 	ImageInfo->file.list[count].type = type;
+ 	ImageInfo->file.list[count].data = data;
+diff -Nru php-5.0.5.orig/ext/iconv/iconv.c php-5.0.5/ext/iconv/iconv.c
+--- php-5.0.5.orig/ext/iconv/iconv.c	2018-05-21 12:32:38.728364218 +0300
++++ php-5.0.5/ext/iconv/iconv.c	2018-05-21 12:48:42.044253697 +0300
+@@ -2388,6 +2388,9 @@
+ 								tcnt = 0;
+ 								break;
+ 							}
++						} else {
++							php_error_docref(NULL, E_WARNING, "iconv stream filter (\"%s\"=>\"%s\"): invalid multibyte sequence", self->from_charset, self->to_charset);
++							goto out_failure;
+ 						}
+ 						break;
+ 
+diff -Nru php-5.0.5.orig/ext/ldap/ldap.c php-5.0.5/ext/ldap/ldap.c
+--- php-5.0.5.orig/ext/ldap/ldap.c	2018-05-21 12:32:38.672364922 +0300
++++ php-5.0.5/ext/ldap/ldap.c	2018-05-21 12:38:33.231907505 +0300
+@@ -1089,7 +1089,11 @@
+ 
+ 		add_assoc_long(tmp1, "count", num_attrib);
+ 		dn = ldap_get_dn(ldap, ldap_result_entry);
+-		add_assoc_string(tmp1, "dn", dn, 1);
++		if (dn) {
++			add_assoc_string(tmp1, "dn", dn, 1);
++		} else {
++			add_assoc_null(tmp1, "dn");
++		}
+ #if (LDAP_API_VERSION > 2000) || HAVE_NSLDAP || HAVE_ORALDAP_10 || WINDOWS
+ 		ldap_memfree(dn);
+ #else

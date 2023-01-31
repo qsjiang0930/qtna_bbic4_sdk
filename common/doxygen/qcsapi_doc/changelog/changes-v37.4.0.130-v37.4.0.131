@@ -1,0 +1,20 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_130_TO_v37_4_0_131 Version v37.4.0.130 to version v37.4.0.131 changes
+ *
+ * \subsection v37_4_0_130_TO_v37_4_0_131Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.130 and v37.4.0.131
+ * \li \ref qcsapi_genl_free_msg
+ * \li \ref qcsapi_genl_put_attr
+ * \li \ref qcsapi_genl_parse
+ * \li \ref qcsapi_genl_socket_open
+ * \li \ref qcsapi_genl_msg_init
+ * \li \ref qcsapi_genl_cmd_send
+ * \li \ref qcsapi_genl_family_resolve
+ * \li \ref qcsapi_genl_msg_recv
+ * \li \ref qcsapi_genl_msg_send
+ * \li \ref qcsapi_genl_socket_close
+ */
+

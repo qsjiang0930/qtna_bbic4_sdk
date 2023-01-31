@@ -1,0 +1,17 @@
+about_resource: linux
+name: Linux Kernel
+version: 2.6.35.12
+homepage_url: Provided as part of the SDK.
+description: Linux kernel sources with quantenna modifications to run on quantenna devices
+
+license_name: GNU General Public License Version 2
+license_expression: gpl-2.0
+license_file: COPYING
+
+copyright: |
+    Copyright (c) 2008-2018 Quantenna Communications Inc
+    See CREDITS for a full list of copyright holders
+
+redistribute: y
+attribute: y
+modified: y

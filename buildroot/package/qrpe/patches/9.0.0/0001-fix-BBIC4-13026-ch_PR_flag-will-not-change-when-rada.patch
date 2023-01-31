@@ -1,0 +1,48 @@
+From f71d80b9809f362684fa81e9e2d781935b950c40 Mon Sep 17 00:00:00 2001
+From: "Jie(Jeremy) Cheng" <jcheng@quantenna.com>
+Date: Tue, 9 Jul 2019 06:28:27 +0000
+Subject: [PATCH] fix(BBIC4-13026): ch_PR_flag will not change when radar
+ detects
+
+add the ignored qevt notifications for channel status changing.
+
+Change-Id: I2201929310089c3516d910d1437ed7080fe3fbce
+---
+ src/qrpe_qtna_driver.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/src/qrpe_qtna_driver.c b/src/qrpe_qtna_driver.c
+index 23044e2..998e16d 100644
+--- a/src/qrpe_qtna_driver.c
++++ b/src/qrpe_qtna_driver.c
+@@ -1282,6 +1282,10 @@ static void qrpe_qtna_report_event_intf_status(uint8_t *bssid, int type, int sta
+ #define QRPE_QTNA_CAC_STOP_EVENT	"RADAR: CAC stopped"
+ #define QRPE_QTNA_CAC_COMP_EVENT	"RADAR: CAC completed"
+ #define QRPE_QTNA_CAC_CONT_EVENT	"RADAR: CAC continue"
++#define QRPE_QTNA_CAC_FOUND_EVENT	"RADAR: radar found"
++#define QRPE_QTNA_CAC_EXPIRED_EVENT	"RADAR: non-occupancy period expired"
++#define QRPE_QTNA_OCAC_COMP_EVENT 	"DFS_s_radio: CAC completed"
++#define QRPE_QTNA_OCAC_AVAIL_EVENT 	"DFS_s_radio: channel"
+ 
+ static void qrpe_qtna_check_and_process_cac_event_from_driver(char *ifname, char *data, int len)
+ {
+@@ -1316,7 +1320,15 @@ static uint8_t qrpe_qtna_check_event_is_radar(char *data, int len)
+ 	    || (len > strlen(QRPE_QTNA_CAC_COMP_EVENT)
+ 		&& !strncmp(data, QRPE_QTNA_CAC_COMP_EVENT, strlen(QRPE_QTNA_CAC_COMP_EVENT)))
+ 	    || (len > strlen(QRPE_QTNA_CAC_CONT_EVENT)
+-		&& !strncmp(data, QRPE_QTNA_CAC_CONT_EVENT, strlen(QRPE_QTNA_CAC_CONT_EVENT))))
++		&& !strncmp(data, QRPE_QTNA_CAC_CONT_EVENT, strlen(QRPE_QTNA_CAC_CONT_EVENT)))
++	    || (len > strlen(QRPE_QTNA_CAC_FOUND_EVENT)
++		&& !strncmp(data, QRPE_QTNA_CAC_FOUND_EVENT, strlen(QRPE_QTNA_CAC_FOUND_EVENT)))
++	    || (len > strlen(QRPE_QTNA_CAC_EXPIRED_EVENT)
++		&& !strncmp(data, QRPE_QTNA_CAC_EXPIRED_EVENT, strlen(QRPE_QTNA_CAC_EXPIRED_EVENT)))
++	    || (len > strlen(QRPE_QTNA_OCAC_COMP_EVENT)
++		&& !strncmp(data, QRPE_QTNA_OCAC_COMP_EVENT, strlen(QRPE_QTNA_OCAC_COMP_EVENT)))
++	    || (len > strlen(QRPE_QTNA_OCAC_AVAIL_EVENT)
++		&& !strncmp(data, QRPE_QTNA_OCAC_AVAIL_EVENT, strlen(QRPE_QTNA_OCAC_AVAIL_EVENT))))
+ 		return 1;
+ 	else
+ 		return 0;
+-- 
+2.9.2
+

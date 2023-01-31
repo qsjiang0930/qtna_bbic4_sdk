@@ -1,0 +1,4 @@
+#!/bin/ash
+call_qcsapi -q get_info wifi0
+call_qcsapi get_uboot_info 0 | awk -F ':' '{print "Flash U-Boot version: " $2}'
+call_qcsapi get_regulatory_db_version

@@ -1,0 +1,19 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_152_TO_v37_4_0_153 Version v37.4.0.152 to version v37.4.0.153 changes
+ *
+ * \subsection v37_4_0_152_TO_v37_4_0_153Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.152 and v37.4.0.153
+ * \li \ref qcsapi_get_ip_route
+ * \li \ref qcsapi_get_ip_dns
+ * \li \ref qcsapi_set_ip_dns
+ * \li \ref qcsapi_set_ip_route
+ *
+ * \subsection v37_4_0_152_TO_v37_4_0_153Removed Removed functions
+ *
+ * The following functions were removed between versions v37.4.0.152 and v37.4.0.153
+ * \li \ref qcsapi_static_route
+ */
+

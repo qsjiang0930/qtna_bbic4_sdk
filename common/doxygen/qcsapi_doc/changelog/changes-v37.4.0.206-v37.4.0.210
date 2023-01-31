@@ -1,0 +1,11 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_206_TO_v37_4_0_210 Version v37.4.0.206 to version v37.4.0.210 changes
+ *
+ * \subsection v37_4_0_206_TO_v37_4_0_210Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.206 and v37.4.0.210
+ * \li \ref qcsapi_wifi_get_node_infoset_all
+ */
+

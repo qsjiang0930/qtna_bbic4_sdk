@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# This script is initialize global variables for user-interface configuration.
+
+# host: NPU(HUG/PCIE) topology.
+host_first_setup=1
+host_bridge_name=br-lan
+host_bridge_ip=192.168.250.180
+host_bridge_mac=D8:58:D7:00:97:86
+
+host_dev_user=root # host ssh-server user name.
+host_auth_keys=/root/.ssh/authorized_keys # host ssh-server path.
+host_csmd_config=/etc/csmd.mapagent.json # csmd run mapiq plugin json config file.
+
+ni_interface=eth2 # al_entity internal interface between NPU and Wi-Fi devices.
+ni_interface_list=eth0	# al_entity interface list.
+al_extra_cfg="-c /etc/map_conf.json" # al_entity extra config file.
+al_debug="-v" #set al_entity debug level: -v/-vv/-vvv
+
+
+# board: BBIC4/BBIC5 chipset board.
+board_bridge_name=br0
+board_bridge_ip=192.168.250.170
+
+ssh_path=/mnt/jffs2/.ssh
+scp=/usr/bin/scp
+ssh=/usr/bin/ssh
+dropbear=/usr/sbin/dropbear
+dropbearkey=/usr/bin/dropbearkey
+extra_cfg_onboard=1

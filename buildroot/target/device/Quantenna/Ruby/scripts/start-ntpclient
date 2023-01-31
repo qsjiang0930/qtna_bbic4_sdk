@@ -1,0 +1,16 @@
+#!/bin/sh
+
+killall -q ntpclient
+
+# continue to adjust time every day
+while true ; do
+	ntpclient -s -h pool.ntp.org >/dev/null 2>&1
+	CURRENT_YEAR=$(date +"%Y")
+	if [ "$CURRENT_YEAR" -ge "2016" ]; then
+		# Got time from NTP server - schedule next update one day from now
+		sleep 86400
+	else
+		# No response from NTP server - retry in a minute
+		sleep 60
+	fi
+done

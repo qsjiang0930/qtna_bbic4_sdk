@@ -1,0 +1,18 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_122_TO_v37_4_0_124 Version v37.4.0.122 to version v37.4.0.124 changes
+ *
+ * \subsection v37_4_0_122_TO_v37_4_0_124Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.122 and v37.4.0.124
+ * \li \ref qcsapi_wifi_txrx_airtime_per_radio
+ * \li \ref qcsapi_wifi_txrx_airtime_per_node
+ * \li \ref qcsapi_wifi_nodestat_per_node
+ * \li \ref qcsapi_wifi_tx_retries_per_node
+ * \li \ref qcsapi_wifi_nodestat_control_per_radio
+ * \li \ref qcsapi_wifi_tx_retries_per_radio
+ * \li \ref qcsapi_wifi_nodestat_per_radio
+ * \li \ref qcsapi_wifi_nodestat_control_per_node
+ */
+

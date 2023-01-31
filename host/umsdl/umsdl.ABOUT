@@ -1,0 +1,17 @@
+about_resource: umsdl
+name: umsdl and bin2ums applications
+version: 1.0.0
+homepage_url: Provided as part of the SDK.
+description: An application for downloading images to Quantenna UMS devices via serial
+notes: Quantenna written/provided
+
+license_name: GNU General Public License Version 2 or later
+license_expression: gpl-2.0
+license_file: ../../gpl-2.0.LICENSE
+
+copyright: Copyright (c) 2007 Quantenna Communications Inc
+owner: Quantenna Communications Inc
+
+redistribute: y
+attribute: y
+modified: n

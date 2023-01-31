@@ -1,0 +1,66 @@
+default_ipaddr=192.168.1.200
+default_netmask=255.255.255.0
+
+configure_sta_network()
+{
+	if [ -f /mnt/jffs2/ipaddr ]
+	then
+		ipaddr=`cat /mnt/jffs2/ipaddr`
+	fi
+
+	if [ -z $ipaddr ] && [ -f /etc/ipaddr ]
+	then
+		ipaddr=`cat /etc/ipaddr`
+	fi
+
+	if [ -f /mnt/jffs2/netmask ]
+	then
+		netmask=`cat /mnt/jffs2/netmask`
+	fi
+
+	if [ -z $netmask ] && [ -f /etc/netmask ]
+	then
+		netmask=`cat /etc/netmask`
+	fi
+
+	if [ -z $ipaddr ]
+	then
+		ipaddr=$default_ipaddr
+	fi
+
+	if [ -z $netmask ]
+	then
+		netmask=$default_netmask
+	fi
+
+	echo "ip address: $ipaddr"
+	echo "netmask: $netmask"
+
+	ifconfig br0 $ipaddr netmask $netmask
+}
+
+start_dhclient()
+{
+	if [ -f /usr/sbin/dhclient ]
+	then
+		static_ip=`get_wifi_config wifi0 staticip`
+		if [ $? -ne 0 ]
+		then
+			static_ip=0
+		fi
+
+		if [ "$static_ip" = "0" ]
+		then
+			echo "Starting DHCP client..."
+			dhclient -4 br0 -cf /etc/dhcp/dhclient.conf &
+		fi
+	fi
+}
+
+killall -q dhcpd
+call_qcsapi -u enable_interface wifi1 0
+
+echo "Configuring STA network ..."
+configure_sta_network
+start_dhclient
+wpa_cli scan_interval 5

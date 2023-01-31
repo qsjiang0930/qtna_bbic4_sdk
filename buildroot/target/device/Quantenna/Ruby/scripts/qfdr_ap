@@ -1,0 +1,95 @@
+#!/bin/sh
+
+# the value of ap_state_file must be same the value of macro QFDR_AP_STATE_FILE in qcsapi
+ap_state_file=/tmp/fdr_ap_state
+
+. import_qtnenv
+
+case "$1" in
+disable)
+	if [ -f $ap_state_file ]; then
+		ap_state=$(cat $ap_state_file)
+		if [ "$ap_state" = "0" ]; then
+			exit
+		fi
+	fi
+	echo 0 > $ap_state_file
+
+	# reject probe and auth req
+	iwpriv wifi0 reject_auth 3
+	# Disable DFS before disable AP
+	iwpriv wifi0 markdfs 0
+	call_qcsapi set_vap_default_state 0
+	target_chan=$(perform_cmd_on_remote "call_qcsapi get_channel wifi0")
+	vap_list=$(ifconfig | grep -o wifi[1-8])
+	for vap in $vap_list
+	do
+		target_bss=$(perform_cmd_on_remote "call_qcsapi get_bssid $vap")
+		fast_steer_sta -i $vap -c "FF:FF:FF:FF:FF:FF" -t $target_bss -n $target_chan
+	done
+
+	# wait 0.1 second before deactivate AP
+	usleep 100000
+
+	for vap in $vap_list
+	do
+		call_qcsapi enable_interface $vap 0
+	done
+	# echo "[FDR][$(awk '{print $1}' /proc/uptime)]: AP disabled" > /dev/console
+	;;
+enable)
+	if [ -f $ap_state_file ]; then
+		ap_state=$(cat $ap_state_file)
+		if [ "$ap_state" = "1" ]; then
+			exit
+		fi
+	else
+		# ap_state_file no exist means ap interface was not disabled since boot up,
+		# because ap interface is enabled by default after boot up,
+		# we just need set 1 to ap_state_file in this case
+		echo 1 > $ap_state_file
+		exit
+	fi
+	echo 1 > $ap_state_file
+	iwpriv wifi0 reject_auth 0
+	# For AP mode, set roaming to AUTO mode
+	iwpriv wifi0 hostroaming 1
+
+	if [ $# = 2 ]; then
+		# qfdr_ap enable non_dfs
+		channel=$(call_qcsapi scs_pick_chan wifi1 non_dfs)
+
+		# disable scs temporarily because of scs off-channel scan which might
+		# cause the client scan this ap failed. defer 5 seconds to resume
+		qfdr_scs disable
+		run_in_background qfdr_scs enable
+
+		if [ $channel -gt 0 ]; then
+			call_qcsapi set_channel wifi0 $channel
+			iwpriv wifi1 ap_noscan 1
+		else
+			iwpriv wifi1 ap_noscan 0
+		fi
+	else
+		iwpriv wifi1 ap_noscan 0
+	fi
+	# Enable DFS before enable AP
+	iwpriv wifi0 markdfs 1
+	call_qcsapi set_vap_default_state 1
+	vap_list=$(iwconfig 2>/dev/null | grep -o wifi[1-8])
+	for vap in $vap_list
+	do
+		if [ "$(call_qcsapi get_vap_state $vap)" != "1" ]; then
+			# customer may disable a VAP from NPU
+			echo "[FDR][$(awk '{print $1}' /proc/uptime)]: don't activate $vap" > /dev/console
+			continue
+		fi
+		call_qcsapi enable_interface $vap 1
+	done
+
+	# echo "[FDR][$(awk '{print $1}' /proc/uptime)]: AP enabled" > /dev/console
+	;;
+*)
+	echo "$0: Bad parameters: $@" > /dev/console
+	;;
+esac

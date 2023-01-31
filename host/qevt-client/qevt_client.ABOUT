@@ -1,0 +1,17 @@
+about_resource: qevt_client.c
+name: QEVT client
+version: 1.0.0
+homepage_url: Provided as part of the SDK.
+description: Implementation of Quantenna Event client functionality
+notes: Quantenna written/provided
+
+license_name: GNU General Public License Version 2 or later
+license_expression: gpl-2.0
+license_file: ../../gpl-2.0.LICENSE
+
+copyright: Copyright (c) 2014 Quantenna Communications Inc
+owner: Quantenna Communications Inc
+
+redistribute: y
+attribute: y
+modified: n

@@ -1,0 +1,15 @@
+about_resource: qserver
+name: Quantenna events server
+version: 1.0
+homepage_url: Provided as part of the SDK.
+description: A server implementation to monitor for wireless events on Quantenna device
+
+license_name: GNU General Public License Version 2
+license_expression: gpl-2.0
+license_file: ../../../gpl-2.0.LICENSE
+
+copyright: Copyright (c) 2016 Quantenna Communications, Inc
+
+redistribute: y
+attribute: y
+modified: n

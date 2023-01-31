@@ -1,0 +1,293 @@
+html, body
+{
+    width: 100%;
+	height:100%;
+}
+body {
+  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 13px;
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url('../fonts/opensans/opensans.woff') format('woff');
+}
+
+#wrapper
+{
+	background-color:#FFF;
+	height:100%;
+}
+
+#page-wrapper
+{
+	border-left:0;
+	background-color: #EBEEF5;
+}
+
+.sidebar
+{
+	top:0;
+	font-size:16px;
+}
+.sidebar ul{
+    border-top: 1px solid #e7e7e7;
+}
+
+.row
+{
+	margin-left:0;
+	margin-right:0;
+}
+
+.nav-brand{
+  right: 0;
+  top: 0;
+}
+.nav-brand {
+  text-align: center;
+  font-size: 25px;
+  line-height: 50px;
+  display: block;
+}
+.nav-brand img {
+	margin-top:1%;
+	margin-bottom:1%;
+	vertical-align: middle;
+}
+
+.navbar-default
+{
+	background-color:transparent;
+}
+
+
+
+a:focus,a:hover
+{
+	text-decoration:none;
+}
+
+
+.bg-light {
+  background-color: #ebeef5;
+  color: #717171;
+}
+.bg-info {
+  background-color: #177388;
+  color: #ffffff;
+}
+.bg-dark {
+  background-color: #4c5566;
+  color: #c4c9d3;
+}
+
+.btn-group
+{
+	background-color:#FFF;
+	border-radius: 5px;
+	width: auto;
+	height:30px;
+}
+
+.panel
+{
+	border-radius: 10px;
+}
+
+
+
+.text_IP
+{
+	height:34px;
+	padding:0 0;
+	font-size:14px;
+	text-align:right
+	line-height:1.42857143;
+	color:#555;
+	background-color:#fff;
+	background-image:none;
+	border:1px solid #ccc;
+	border-radius:4px;
+	-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075);
+	box-shadow:inset 0 1px 1px rgba(0,0,0,.075);
+	-webkit-transition:border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+	-o-transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+	transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+	}
+}
+.text_IP:focus
+{
+	border-color:#66afe9;
+	outline:0;
+	-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+	box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+}
+.text_IP[disabled],.text_IP[readonly]{
+	background-color:#eee;opacity:1
+}
+.text_IP[disabled]
+{
+	cursor:not-allowed
+}
+
+
+#panel_system
+{
+	height:300px;
+}
+
+#button_detail
+{
+	padding:1px 5px;
+}
+
+.form-control
+{
+	font-weight:bold;
+	width:100%;
+	padding:8px 0;
+}
+
+.form-control[readonly]
+{
+	font-weight:bold;
+	background-color:transparent;
+	border:0;
+	width:100%;
+	padding:8px 0;
+	/*text-decoration: underline;*/
+}
+
+.text_status[readonly]
+{
+	font-weight:bold;
+	background-color:transparent;
+	border:0;
+	width:100%;
+	padding:8px 0;
+	/*text-decoration: underline;*/
+}
+
+#note
+{
+	border-left:1px solid #CDCDCD;
+	border-top:1px solid #CDCDCD;
+	border-right:1px solid #CDCDCD;
+	border-bottom:1px solid #CDCDCD;
+	z-index:1000;
+}
+
+.form-control
+{
+	padding:0 10px;
+	font-size:13px;
+}
+
+.shelter{
+	 display			: none;
+	 position			: absolute;
+	 top				: 0;
+	 left				: 0;
+	 width				: 100%;
+	 height				: 100%;
+	 background-color	: #f5f5f5;
+	 opacity			: 0.6;
+	 z-index			: 1;
+}
+.loading{
+	display				: none;
+	position			: absolute;
+	top					: 40%;
+	left				: 40%;
+	width				: 20%;
+	height				: 20%;
+	z-index				: 2;
+	text-align			:center;
+}
+@media (max-width: 991px)
+{
+	#Login
+	{
+		margin:0 auto;
+		max-width:500px;
+	}
+}
+@media (max-width: 768px)
+{
+	#side_bar
+	{
+		width:100%;
+		position: fixed;
+		top:0;
+		background-color:#FFF;
+		z-index:2000;
+	}
+	#page-wrapper
+	{
+		min-width:250px;
+		margin-right:0;
+		padding: 0 0;
+	}
+	#panel_status,#panel_config,#panel_system,#panel_tools,#mbss1,#mbss2,#mbss3,#mbss4,#mbss5,#mbss6,#mbss7,#alert
+	{
+		width:80%;
+		min-width:240px;
+		max-width:450px;
+		margin:0 auto;
+	}
+	#panel_radio,#panel_neighboringwifidiagnostic,#panel_ssid,#panel_accesspoint,#panel_endpoint
+	{
+		width:80%;
+		min-width:240px;
+		max-width:450px;
+	}
+	#note
+	{
+		height:100px;
+		width:100%;
+		position: fixed;
+		bottom:0;
+	}
+	#sign_in
+	{
+		margin-top:20%;
+	}
+}
+@media(min-width:768px)
+{
+	#page-wrapper
+	{
+		height:100%;
+		margin-right:20%;
+		padding: 0 15px;
+	}
+	#panel_status,#panel_config,#mbss1,#mbss2,#mbss3,#mbss4,#mbss5,#mbss6,#mbss7,#panel_system,#panel_tools,#alert
+	{
+		width:70%;
+		min-width:300px;
+	}
+	#panel_radio,#panel_neighboringwifidiagnostic,#panel_ssid,#panel_accesspoint,#panel_endpoint
+	{
+		width:70%;
+		min-width:300px;
+	}
+	,
+	{
+		width:90%;
+		min-width:300px;
+	}
+	#note
+	{
+		height:100%;
+		width:20%;
+		position: fixed;
+		top:0;
+		right:0;
+	}
+	#sign_in
+	{
+		margin-top:50%;
+	}
+}

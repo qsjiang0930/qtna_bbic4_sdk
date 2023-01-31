@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>Quantenna Communications</title>
+	<!-- favicon.ico -->
+	<!-- Bootstrap Core CSS -->
+	<link href="css/bootstrap.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/sb-admin-2.css" rel="stylesheet">
+    <!-- Custom Fonts -->
+    <!-- style CSS -->
+    <link href="css/style.css" rel="stylesheet">
+
+    <link href="css/dashboard.css" rel="stylesheet">
+    <!-- Switch CSS -->
+    <link href="css/basic.css" rel="stylesheet">
+
+    <link href="css/main.css" rel="stylesheet">
+
+    <link href="css/font-awesome.css" rel="stylesheet" type="text/css" />
+
+    <link href="css/animate.css" rel="stylesheet">
+    <!-- jQuery Version 1.11.0 -->
+    <script src="js/jquery-1.11.0.js"></script>
+        <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.js"></script>
+    <!-- Metis Menu Plugin JavaScript -->
+    <script src="js/metisMenu.js"></script>
+    <!-- Custom Theme JavaScript -->
+    <script src="js/sb-admin-2.js"></script>
+    <!-- Common JavaScript -->
+    <script src="js/common.js"></script>
+</head>
+
+<body style="background:#e8ebec;">
+	<div class="container animated fadeInDown" style="height:500px;">
+        <div class="row">
+            <div class="col-md-4 col-md-offset-4 center-vertical" style="background:#fff;padding-bottom:30px;padding-top:10px; border-radius:5px;">
+                <h2 style="text-align:center;"><img src="img/Quantenna_Main_Logo.png" style="width:300px; height:64px;"></h2>
+                <form id="mainform">
+                    <div class="form-group mt30">
+                        <label>Username:</label>
+                        <input type="Username" id="Username" class="form-control" placeholder="Username" onKeyDown="keydownevent(event)">
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="Password" id="Password" class="form-control" placeholder="Password" onKeyDown="keydownevent(event)">
+                    </div>
+                    <input type="button" class="btn btn-primary btn-block" onClick="validate()" value="Login">
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="container animated fadeInDown">
+        <div class="row">
+            <div class="col-md-4 col-md-offset-4 center-vertical">
+                <div class="text-center">
+                    <div class="text-center" style="margin-top:5px;">
+                        <small style="color:#337ab7;">
+                            © 2016 Quantenna Communications, Inc. All Rights Reserved.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script type="text/javascript">
+$(document).ready(function()
+{
+	mainform.Username.focus();
+});
+
+function login_event()
+{
+	$.ajax(
+	{
+		type		: 'POST',
+		url			: 'server/login.php',
+		dataType	: 'json',
+		data		: {username:$("#Username").val(),password:$("#Password").val()},
+		success		: function(data)
+		{
+			if(data.result == 1)
+			{
+				window.location.href="network_status.html?token=" + data.token;
+			}
+			else
+			{
+				alert("Username or Password is incorrect!");
+			}
+		},
+		error		: function()
+		{
+			alert("Ajax Failed");
+        }
+	});
+}
+
+function validate()
+{
+	var txt_user = document.getElementById('Username');
+	var txt_pwd = document.getElementById('Password');
+	if(txt_user.value == "")
+	{
+		alert("The Username should not be empty.");
+		mainform.Username.focus();
+		return false;
+	}
+	if(txt_pwd.value == "")
+	{
+		alert("The Password should not be empty.");
+		mainform.Password.focus();
+		return false;
+	}
+	login_event();
+}
+
+function keydownevent(event)
+{
+	if(event.keyCode==13)
+	{
+		validate();
+	}
+}
+</script>
+</html>

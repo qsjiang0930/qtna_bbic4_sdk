@@ -1,0 +1,15 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_151_TO_v37_4_0_152 Version v37.4.0.151 to version v37.4.0.152 changes
+ *
+ * \subsection v37_4_0_151_TO_v37_4_0_152Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.151 and v37.4.0.152
+ * \li \ref qcsapi_wifi_get_restrict_wlan_ip
+ * \li \ref qcsapi_pm_is_allowed
+ * \li \ref qcsapi_wifi_get_chan_list_for_bw
+ * \li \ref qcsapi_wifi_set_restrict_wlan_ip
+ * \li \ref qcsapi_wifi_ip_addr_per_node
+ */
+

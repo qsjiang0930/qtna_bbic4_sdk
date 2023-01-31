@@ -1,0 +1,16 @@
+about_resource: busybox
+name: Busybox Collection of userspace utilities
+version: 1.4.1
+homepage_url: Provided as part of the SDK.
+description: A collection of userspace utilities
+notes: Modified by Quantenna to support quantenna wireless drivers and configuration stack
+
+license_name: GNU General Public License Version 2
+license_expression: gpl-2.0
+license_file: ../../../gpl-2.0.LICENSE
+
+copyright: see AUTHORS for a list of copyrights holders
+
+redistribute: y
+attribute: y
+modified: y

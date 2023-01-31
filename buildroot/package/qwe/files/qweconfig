@@ -1,0 +1,142 @@
+#!/bin/sh
+
+. import_qtnenv
+default_config_file=/etc/qwe.conf
+nvram_config_file=$persistent_path/qwe.conf
+ram_config_file=/tmp/qwe.conf
+running_config_file=/tmp/qwe.conf.running
+denymacfile=$persistent_path/qwe.macdeny
+allowmacfile=$persistent_path/qwe.macallow
+
+usage_and_exit()
+{
+	cat <<EOF
+Usage:	$0 <command> [<parameter>] [<value>]
+Commands:
+	set <parameter> <value>      : set the value to parameter in ram config file and nvram config file
+	setonce <parameter> <value>  : set the value to parameter in ram config file, the value will lose effectiveness after "qweconfig backuprunning"
+	get <parameter>              : get the value of parameter from ram config file and default config file (if cannot get from ram config file)
+	backuprunning                : backup ram config file to running config file then overwrite ram config file with nvram config file
+	getrunning <parameter>       : get the value of parameter from running config file and default config file (if cannot get from running config file)
+	deny_mac <mac>               : deny one device
+	allow_mac <mac>              : allow one device
+	list_deny_mac                : list all denied devices
+	list_allow_mac               : list all allowed devices
+	unset <parameter>            : delete parameter and its value from ram config file and nvram config file
+	default                      : set all of the config to default
+EOF
+	exit 1
+}
+
+if [ $# -lt 1 ]; then
+	usage_and_exit
+fi
+
+action=$1
+param=$2
+value=$3
+
+[ -f $nvram_config_file ] || touch $nvram_config_file
+[ -f $ram_config_file ] || cat $nvram_config_file > $ram_config_file
+[ -f $denymacfile ] || touch $denymacfile
+[ -f $allowmacfile ] || touch $allowmacfile
+
+case $1 in
+    get | getrunning)
+	if [ $# != 2 ]; then
+		usage_and_exit
+	fi
+	if [ $action = "getrunning" -a -f $running_config_file ]; then
+		config_file=$running_config_file
+	else
+		config_file=$ram_config_file
+	fi
+	line=$(grep "^$param=" $config_file)
+	if [ "x$line" = "x" ]; then
+		line=$(grep "^$param=" $default_config_file)
+	fi
+	if [ "x$line" = "x" ]; then
+		echo "Warning: don't find $param in $config_file and $default_config_file" > /dev/console
+	fi
+	echo -n ${line#*=}
+	;;
+    set | setonce)
+	if [ $# != 3 ]; then
+		usage_and_exit
+	fi
+	if [ "x$(grep "^$param=" $default_config_file)" = "x" ]; then
+		echo "Warning: current platform don't support this parameter, current platform only support below parameters:"
+		awk -F '=' '{print $1}' $default_config_file
+		exit
+	fi
+	sed -i "/^$param=/d" $ram_config_file
+	echo "$param=$value" >> $ram_config_file
+	if [ $action = "setonce" ]; then
+		exit
+	fi
+	sed -i "/^$param=/d" $nvram_config_file
+	echo "$param=$value" >> $nvram_config_file
+	;;
+    deny_mac)
+	if [ $# != 2 ]; then
+		usage_and_exit
+	fi
+	mac=$(echo $param | awk '{print tolower($0)}')
+	sed -i "/^$mac/d" $allowmacfile
+	if [ "x$(grep "^$mac" -i $denymacfile)" = "x" ]; then
+		echo "$mac" >> $denymacfile
+	fi
+	;;
+    allow_mac)
+	if [ $# != 2 ]; then
+		usage_and_exit
+	fi
+	mac=$(echo $param | awk '{print tolower($0)}')
+	sed -i "/^$mac/d" $denymacfile
+	if [ "x$(grep "^$mac" -i $allowmacfile)" = "x" ]; then
+		echo "$mac" >> $allowmacfile
+	fi
+	;;
+    list_deny_mac)
+	if [ $# != 1 ]; then
+		usage_and_exit
+	fi
+	[ -f $denymacfile ] && cat $denymacfile | xargs echo -n | sed 's/ /,/g'
+	;;
+    list_allow_mac)
+	if [ $# != 1 ]; then
+		usage_and_exit
+	fi
+	[ -f $allowmacfile ] && cat $allowmacfile | xargs echo -n | sed 's/ /,/g'
+	;;
+    default)
+	if [ $# != 1 ]; then
+		usage_and_exit
+	fi
+	>$ram_config_file
+	>$nvram_config_file
+	>$denymacfile
+	>$allowmacfile
+	;;
+    backuprunning)
+	if [ $# != 1 ]; then
+		usage_and_exit
+	fi
+	if [ -s $ram_config_file ]; then
+		cat $ram_config_file > $running_config_file
+	else
+		cat $nvram_config_file > $running_config_file
+	fi
+	cat $nvram_config_file > $ram_config_file
+	;;
+    unset)
+	if [ $# != 2 ]; then
+		usage_and_erit
+	fi
+	sed -i "/^$param=/d" $ram_config_file
+	sed -i "/^$param=/d" $nvram_config_file
+	;;
+    *)
+	usage_and_exit
+	;;
+esac

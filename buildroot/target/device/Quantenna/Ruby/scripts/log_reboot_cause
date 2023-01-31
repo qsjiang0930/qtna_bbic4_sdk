@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# Log the reboot cause to syslog after syslogd has started.
+#
+procname=`basename $0`
+
+syslog="syslogd"
+
+if [ $# -eq 1 ]
+then
+	syslog="$1"
+fi
+
+while [ "`pidof $syslog`" = "" ]
+do
+	sleep 5
+done
+
+reboot_cause=`call_qcsapi get_reboot_cause`
+
+logger -p 5 "$procname: $reboot_cause"

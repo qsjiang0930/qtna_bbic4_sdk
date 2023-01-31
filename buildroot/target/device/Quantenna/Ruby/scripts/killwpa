@@ -1,0 +1,6 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+
+$base_scripts/launch stop hostapd
+$base_scripts/launch stop wpa_supplicant

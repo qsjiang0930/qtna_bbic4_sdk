@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quantenna Communications</title>
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/sb-admin-2.css" rel="stylesheet">
+    <!-- Custom Fonts -->
+    <!-- style CSS -->
+    <link href="css/style.css" rel="stylesheet">
+
+    <link href="css/dashboard.css" rel="stylesheet">
+    <!-- Switch CSS -->
+    <link href="css/basic.css" rel="stylesheet">
+
+    <link href="css/main.css" rel="stylesheet">
+
+    <link href="css/font-awesome.css" rel="stylesheet" type="text/css"/>
+
+    <link href="css/animate.css" rel="stylesheet">
+    <!-- jQuery Version 1.11.0 -->
+    <script src="js/jquery-1.11.0.js"></script>
+        <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.js"></script>
+    <!-- Metis Menu Plugin JavaScript -->
+    <script src="js/metisMenu.js"></script>
+    <!-- Custom Theme JavaScript -->
+    <script src="js/sb-admin-2.js"></script>
+    <!-- Common JavaScript -->
+    <script src="js/common.js"></script>
+</head>
+
+<body>
+	<div id="wrapper">
+        <nav class="navbar navbar-default navbar-fixed-top nav-color" role="navigation" style="background-image: url(img/sonicheader_bg1.png); height: 70px; width: 100%;">
+            <div class="container">
+                <button type="button" class="navbar-toggle navbtn-position" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="" id="back_home"><img src="img/Quantenna_Main_Logowhite.png" height="42px" width="200px" class="logo" style="margin-top:12px;"></a>
+            </div>
+        </nav>
+        <div class="container" style="margin-top:60px;padding-left:0px;padding-right:0px;">
+            <div class="row">
+                <div class="col-md-3 col-sm-3" style="padding:0px;">
+                    <div class="sidebar2" role="navigation" id="side_bar" style="padding-left:0px;">
+                        <div class="sidebar-nav navbar-collapse" id="side-menu">
+                            <div class="leftmain">
+                                <div id="firstpane" class="menu_list">
+                                    <ul class="nav" id="menu">
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-9 col-sm-9 rightmain">
+                    <div class="container-fluid right_header">System</div>
+                    <div class="container-fluid" style="padding-left:0px; padding-right:0px;">
+                        <div class="network_system animated fadeInRight" style="height:500px;">
+                            <div class="network_system_content">
+                                <div class="alert alert-warning alert-dismissible h" role="alert" style="display:none;height:50px;" id="alert24G">
+                                    <button type="button" class="close" onclick="$('#alert24G').hide();"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                                    <strong><i style="margin-right:5px;float:left;"><img src="img/loading.gif" height="16px" width="16px" id="loading24G" style="float:left;"><span id="sta_appin" style="margin-left:3px;float:left;font-size:16px;">Restoring...</span><span style="display:none;font-size:16px;" id="sta_appin24G">Restore is completed.</span></i></strong>
+                                </div>
+                                <div class="network_system_box">
+                                    <div id="divDlock_2" class="DivBlockgai">
+                                        <div class="system_box" onClick="showdiv('contentid','showtext')">
+                                            <h4>Restore</h4>
+                                            <img src="img/block_unwrap.png" id="showtext">
+                                        </div>
+                                        <div class="textgai" id="contentid" style="display:block;">
+                                            <div class="restore_content">
+                                                <div class="restore_box">
+                                                    <p class="restore">Restore all configuration files to factory defaults</p>
+                                                    <button type="button" class="restore_btn" onclick="restore_config_network();">Yes</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /#mainbody -->
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12 footer">© 2016 Quantenna Communications, Inc. All Rights Reserved.</div>
+            </div>
+        </div>
+	</div><!-- /#wrapper -->
+</body>
+<div class="shelter" id="div_shelter"></div>
+<div class="loading" id="div_loading"><img src="img/loading.gif"></div>
+<script type="text/javascript">
+$(document).ready(function()
+{
+    validate_token();
+});
+
+
+function showdiv(targetid,objN) {
+    var target=document.getElementById(targetid);
+    var clicktext=document.getElementById(objN);
+
+    if (target.style.display=="block") {
+        target.style.display="none";
+        clicktext.src = "img/block_wrap.png";
+    } else {
+        target.style.display="block";
+        clicktext.src = "img/block_unwrap.png";
+    }
+}
+
+function restore_config_network() {
+    $.ajax(
+    {
+        type        : 'POST',
+        url         : 'server/configuration.php',
+        timeout     : ajax_timeout,
+        data        : {action:"restore_config_network"},
+        beforeSend  : function(){
+            document.getElementById("alert24G").style.display="block";
+        },
+        complete    : function(){},
+        success     : function(data)
+        {
+            document.getElementById("loading24G").style.display="none";
+            document.getElementById("sta_appin").style.display="none";
+            document.getElementById("sta_appin24G").style.display="block";
+        },
+        error       : function()
+        {
+            alert("Ajax Failed");
+        }
+    })
+}
+</script>
+</html>

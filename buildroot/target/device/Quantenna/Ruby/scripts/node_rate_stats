@@ -1,0 +1,48 @@
+#! /bin/sh
+
+usage() {
+	[ $# -ne 0 ] && echo "$@"
+	echo "Usage:"
+	echo "  $(basename $0) set <unit_id> <node_mac_addr> { tx | rx } { enable | disable }"
+	echo "  $(basename $0) show"
+	exit 1
+}
+
+case "$1" in
+set)
+	[ $# -ne 5 ] && usage "$(basename $0): wrong number of parameters"
+
+	macid="$2"
+	mac="$3"
+	dir="$4"
+
+	case "$5" in
+	enable|1)
+		en=1
+		;;
+	disable|0)
+		en=0
+		;;
+	*)
+		usage "$(basename $0): use enable/disable instead of $5"
+		;;
+	esac
+
+	case "$dir" in
+	tx|rx)
+		;;
+	*)
+		usage "$(basename $0): use tx/rx instead of $dir"
+		;;
+	esac
+
+
+	qdrvcmd -proc set node_rate_stats "$macid" "$mac" "$dir" "$en"
+	;;
+show)
+	qdrvcmd -proc get 0 node_rate_stats
+	;;
+*)
+	usage "$(basename $0): bad subcommand - $1"
+	;;
+esac

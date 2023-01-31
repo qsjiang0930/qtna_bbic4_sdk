@@ -1,0 +1,22 @@
+#!/bin/sh
+
+unit=0
+
+is_radio_active()
+{
+        iwconfig wifi$unit | grep -q Mode: > /dev/null
+}
+
+do_stats() {
+        radio=$1
+        echo "get $radio show_erw_stats" > /sys/devices/qdrv/control
+        cat /proc/qdrvdata
+}
+
+if is_radio_active $unit; then
+        echo "Interface wifi$unit"
+        do_stats $unit
+        echo ""
+else
+	echo "Interface wifi$unit is inactive"
+fi

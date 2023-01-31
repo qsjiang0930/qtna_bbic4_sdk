@@ -1,0 +1,36 @@
+#! /bin/sh
+
+count=0
+
+if [ $# -gt 1 ]
+then
+	echo "Usage: $0 <loopcount>"
+	echo "where loopcount 0:forever >1:count"
+	exit 1
+fi
+
+if [ $# -gt 0 ]
+then
+	count=$1
+fi
+
+if [ $count -gt 0 ]
+then
+	let "count++"
+fi
+
+list="555555 aaaaaa ffffff 5a5a5a a5a5a5 c3c3c3 3c3c3c 02 fffffd"
+
+while [ $count -ne 1 ]
+do
+	for pattern in $list
+	do
+		testrfmem 0 178 $pattern
+		testrfmem 0 179 $pattern
+	done
+
+	if [ $count -gt 1 ]
+	then
+		let "count--"
+	fi
+done

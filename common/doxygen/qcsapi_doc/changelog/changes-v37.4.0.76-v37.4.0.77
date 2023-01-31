@@ -1,0 +1,23 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_76_TO_v37_4_0_77 Version v37.4.0.76 to version v37.4.0.77 changes
+ *
+ * \subsection v37_4_0_76_TO_v37_4_0_77Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.76 and v37.4.0.77
+ * \li \ref qcsapi_wifi_get_rm_neigh_report
+ * \li \ref qcsapi_wifi_set_btm_cap
+ * \li \ref qcsapi_wifi_wds_set_psk
+ * \li \ref qcsapi_wifi_wds_get_psk
+ * \li \ref qcsapi_wifi_get_btm_cap
+ * \li \ref qcsapi_wifi_get_eap_own_ip_addr
+ * \li \ref qcsapi_wifi_set_rm_neigh_report
+ * \li \ref qcsapi_wifi_set_eap_own_ip_addr
+ *
+ * \subsection v37_4_0_76_TO_v37_4_0_77Removed Removed functions
+ *
+ * The following functions were removed between versions v37.4.0.76 and v37.4.0.77
+ * \li \ref qcsapi_wds_set_psk
+ */
+

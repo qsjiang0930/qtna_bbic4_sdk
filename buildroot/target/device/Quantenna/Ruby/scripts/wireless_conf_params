@@ -1,0 +1,60 @@
+#!/bin/sh
+#
+# The Wireless configuration parameters
+
+g_wifi_config_param_list="
+	autostart
+	band
+	bf
+	bw
+	channel
+	coc_move_to_ndfs
+	default_up
+	dfs_s_radio
+	dhcpv6
+	dis_rptr_ap
+	f40
+	fw_no_mu
+	leds
+	maui
+	max_boot_cac
+	mcs
+	mode
+	monitor_temperature
+	monitorreset
+	monitorrfenable
+	mu
+	multicast_router
+	neigh_repo
+	non_dfs_channel
+	ntpclient
+	pmf
+	pta
+	pta_gnt_pol
+	pta_req_pol
+	pwr
+	pwr_2g
+	pwr_cal
+	qevt
+	qlink
+	qsteer
+	qtm
+	region
+	region_db
+	region_dyn
+	scs
+	set_btm_cap
+	ssdp_flood
+	sta_dfs
+	sta_dfs_msr_cac
+	sta_dfs_strict
+	start_down
+	staticip
+	sysmon
+	tx_restrict
+	use3way
+	vht
+	vht_24g
+	wfa
+	wps_push_button_gpio
+	"

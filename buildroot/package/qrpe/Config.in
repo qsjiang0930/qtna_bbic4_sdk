@@ -1,0 +1,6 @@
+config BR2_PACKAGE_QRPE
+	bool "QRPE"
+	default n
+        help
+	  Quantenna Radio Peer Entry
+

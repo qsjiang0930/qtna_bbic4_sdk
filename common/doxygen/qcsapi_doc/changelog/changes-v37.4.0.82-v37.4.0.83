@@ -1,0 +1,28 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_82_TO_v37_4_0_83 Version v37.4.0.82 to version v37.4.0.83 changes
+ *
+ * \subsection v37_4_0_82_TO_v37_4_0_83Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.82 and v37.4.0.83
+ * \li \ref qcsapi_wifi_set_ieee80211r
+ * \li \ref qcsapi_wifi_get_11r_r1_key_holder
+ * \li \ref qcsapi_wifi_set_ieee80211r_nas_id
+ * \li \ref qcsapi_wifi_set_ieee80211r_mobility_domain
+ * \li \ref qcsapi_wifi_get_11r_neighbour
+ * \li \ref qcsapi_wifi_get_rm_neigh_report
+ * \li \ref qcsapi_wifi_get_ieee80211r_nas_id
+ * \li \ref qcsapi_wifi_set_btm_cap
+ * \li \ref qcsapi_wifi_get_ieee80211r
+ * \li \ref qcsapi_wifi_add_11r_neighbour
+ * \li \ref qcsapi_wifi_get_ieee80211r_mobility_domain
+ * \li \ref qcsapi_wifi_del_11r_neighbour
+ * \li \ref qcsapi_wifi_get_ieee80211r_ft_over_ds
+ * \li \ref qcsapi_wifi_set_11r_r1_key_holder
+ * \li \ref qcsapi_get_pd_voltage_level
+ * \li \ref qcsapi_wifi_set_rm_neigh_report
+ * \li \ref qcsapi_wifi_set_ieee80211r_ft_over_ds
+ * \li \ref qcsapi_wifi_get_btm_cap
+ */
+

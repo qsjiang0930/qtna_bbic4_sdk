@@ -1,0 +1,80 @@
+#! /bin/sh
+
+bin=${0##*/}
+
+procname=$(basename $0)
+
+show_usage()
+{
+	echo "Usage: $procname [channel | all] [active | configured]"
+}
+
+primary_vap=$(call_qcsapi -u get_primary_interface)
+if [ $? -ne 0 ]
+then
+	echo "$bin: cannot get the primary WiFi interface"
+	exit 1
+fi
+
+region=$(call_qcsapi -u get_regulatory_region $primary_vap)
+if [ $? -ne 0 ]
+then
+	region="none"
+fi
+
+pr_fmt="1,2,3,4:*:*:20,40,80"
+header_opt=
+
+chan_list=$1
+pwr_table_type=$2
+bw=$3
+
+if [ "$bw" == "" ]; then
+	bw="20"
+fi
+
+if [ "$1" == "" ] || [ "$1" == "all" ]; then
+	if [ "$region" = "none" ]
+	then
+		chan_list=$(call_qcsapi -u get_list_of_channels $primary_vap)
+	else
+		chan_list=$(call_qcsapi -u get_list_regulatory_channels $region $bw)
+	fi
+	chan_list=$(echo $chan_list | sed 's/,/ /g')
+fi
+
+if [ "$pwr_table_type" == "" ]; then
+	pwr_table_type="active"
+fi
+
+chipid=`cat /proc/hw_revision | awk -F_ '{print $1}'`
+
+echo "Regulatory Region: $region"
+
+case "$chipid" in
+	"bbic3")
+		echo "Channel   TX Power"
+		for channel in $chan_list
+		do
+			tx_power=$(call_qcsapi -u get_tx_power $primary_vap $channel)
+			echo " $channel $tx_power" | awk '{ printf "  %3d        %3d\n", $1, $2}'
+		done
+		;;
+	"bbic4")
+		echo "                TX Power ($pwr_table_type)"
+		for channel in $chan_list
+		do
+			call_qcsapi -u reg_chan_txpower_get $primary_vap $header_opt -f $pwr_table_type \
+				"${channel}:${pr_fmt}"
+			if [ $? -ne 0 ]; then
+				show_usage
+				exit 1
+			fi
+			header_opt="-n"
+		done
+		;;
+	"*")
+		echo "undefined chip $chipid"
+		;;
+esac
+

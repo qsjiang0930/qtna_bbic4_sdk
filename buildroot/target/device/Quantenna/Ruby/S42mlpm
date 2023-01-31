@@ -1,0 +1,77 @@
+#!/bin/sh
+
+# This script is to start, stop and check the status of qevt_server.
+
+check_status() {
+	pid=`pidof "$1"`
+	if [ -n "$pid" ]
+	then
+		echo "$qmlpm service is running"
+	else
+		echo "$qmlpm service is not running"
+	fi
+}
+
+start() {
+	export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/scripts:/usr/local/bin
+	export LD_LIBRARY_PATH=/lib:/usr/lib
+
+	qmlpm_enabled=`get_wifi_config wifi0 mlpm`
+
+	if [ "$qmlpm_enabled" == "1" ]
+	then
+		if [ -f $qmlpm_path/$qmlpm ]
+		then
+			echo "Staring $qmlpm  $QMLPM_ENABLED"
+			$base_scripts/launch start $qmlpm &
+		else
+			echo "$qmlpm_path/$qmlpm not found"
+			exit 1
+		fi
+	fi
+}
+
+stop() {
+	$base_scripts/launch stop $qmlpm
+}
+
+status() {
+	qmlpm_enabled=`get_wifi_config wifi0 mlpm`
+
+	if [ "$qmlpm_enabled" == "1" ]
+	then
+		check_status "$qevt_server"
+	else
+		echo "$qmlpm is not enabled in wireless_conf.txt"
+	fi
+}
+
+restart() {
+	stop
+	start
+}
+
+qmlpm_path="/sbin"
+qmlpm="qevt_mlpm"
+
+base_scripts="/scripts"
+
+case "$1" in
+  start)
+       start
+        ;;
+  stop)
+       stop
+        ;;
+  status)
+       status
+        ;;
+  restart|reload)
+       restart
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
+
+exit $?

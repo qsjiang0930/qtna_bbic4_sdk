@@ -1,0 +1,17 @@
+#!/bin/sh
+# get a compressed power table file (.ptar) file from tftp server <server_ip>
+# and extract its contents into ./<base_name>
+
+suffix="ptar"
+
+if [ $# -ne 2 ]
+then
+        echo "Usage: $0 <base_name> <server_ip>"
+        exit 1
+fi
+
+base_name=$1
+server_ip=$2
+
+tftp -g -r $base_name.$suffix $server_ip
+tar -xz -f $base_name.$suffix

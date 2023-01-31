@@ -1,0 +1,75 @@
+#!/bin/sh
+#
+# Scripts to start on a Network Processor board
+#
+
+base_scripts="/scripts"
+
+. $base_scripts/start-helpers.sh
+
+# dump flash linux_live partition to /etc/firmware/ep/topaz-linux.lzma.img
+partition=$(grep linux_live /proc/mtd | awk -F ':' '{print $1}')
+if [ "$partition" = "" ]; then
+	"Error: Don't find linux_live partition, slave image is not available "
+	exit 1
+fi
+mkdir -p /etc/firmware/ep/
+cp -f /etc/firmware/u-boot.bin /etc/firmware/ep/u-boot.bin
+dd if=/dev/$partition of=/etc/firmware/ep/topaz-linux.lzma.img
+
+start_qfdr_assistant
+
+. import_qtnenv
+
+# isolate vlan on RTL8367B switch
+QFDR_MASTER_PORT="6"
+QFDR_SLAVE_PORT="7"
+echo "$qfdr_mgnvlan: $QFDR_MASTER_PORT $QFDR_SLAVE_PORT" > /proc/rtl8367b/vlan_port
+
+vconfig add br0 $qfdr_mgnvlan
+ifconfig br0.$qfdr_mgnvlan $qfdr_local_ip up
+brctl ssdp_flood br0 on
+
+rgmii_reset_gpio=14
+rgmii_reset_gpio_sysctl_path=/sys/devices/virtual/gpio/gpio$rgmii_reset_gpio
+
+if [ ! -e $rgmii_reset_gpio_sysctl_path ] ; then
+	echo $rgmii_reset_gpio > /sys/class/gpio/export
+fi
+
+if [ -e $rgmii_reset_gpio_sysctl_path ] ; then
+	echo Power cycling RGMII daughter board, gpio $rgmii_reset_gpio
+	echo out > $rgmii_reset_gpio_sysctl_path/direction
+	echo 0 > $rgmii_reset_gpio_sysctl_path/value
+	echo 1 > $rgmii_reset_gpio_sysctl_path/value
+else
+	echo Error exporting gpio $rgmii_reset_gpio
+fi
+
+detect_qfdr_mode
+
+# monitor the Reset Device push button
+# GPIO pin is 5, active low
+monitor_reset_device 5 0 &
+
+# backup hostapd.conf when turn QFDR from tri-band AP to extender mode
+# restore hostapd.conf when turn QFDR from extender to tri-band AP mode
+last_qfdr_running_file=$persistent_path/last_qfdr_running_mode
+last_qfdr_running_mode=$(cat $last_qfdr_running_file 2>/dev/null)
+curr_qfdr_running_mode=$(get_qfdr_running_mode)
+
+if [ "$last_qfdr_running_mode" = "Access point" -a "$curr_qfdr_running_mode" = "Station" ]; then
+	if [ -f $persistent_path/hostapd.conf ]; then
+		cat $persistent_path/hostapd.conf > $persistent_path/hostapd.conf.qfdr
+	fi
+elif [ "$last_qfdr_running_mode" = "Station" -a "$curr_qfdr_running_mode" = "Access point" ]; then
+	if [ -f $persistent_path/hostapd.conf.qfdr ]; then
+		cat $persistent_path/hostapd.conf.qfdr > $persistent_path/hostapd.conf
+	fi
+fi
+
+if [ "$last_qfdr_running_mode" != "$curr_qfdr_running_mode" ]; then
+	echo "$curr_qfdr_running_mode" > $last_qfdr_running_file
+fi
+
+start_qfdr_prod &

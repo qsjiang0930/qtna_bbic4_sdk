@@ -1,0 +1,75 @@
+#!/bin/sh
+
+# This script is to set up NPU(ssh/dropbear) environment.
+security_path=/mnt/jffs2
+run_path=`pwd`
+
+if [ ! -f ${security_path}/npu_cfg ]; then
+	cp -f /scripts/npu_cfg ${security_path}/npu_cfg
+fi
+source ${security_path}/npu_cfg
+
+restart_rpecat()
+{
+	pid=`ps | grep "rpecat" | grep -v "grep rpecat" | awk '{print $1}'`
+	if [ -n "$pid" ]; then
+		kill $pid
+	fi
+	rpecat &
+}
+
+if [ "$host_first_setup" == "1" ]; then
+	read -p "Is this is the frist time to set up ssh/dropbear environment(yes/no)?:" run_first
+fi
+
+if [ "$run_first" == "y" -o "$run_first" == "yes" ]; then
+	echo "These steps may input password multi-times for set up the host ssh server..."
+	if [ ! -f $ssh -o ! -f $dropbearkey ]; then
+		echo "Warning: ssh/dropbearkey does not exist, please config it!"
+		exit
+	else
+		echo "Generating known_hosts..."
+		$ssh $host_dev_user@$host_bridge_ip exit
+		if [ ! -f  "$run_path/.ssh/known_hosts" ]; then
+			echo "Warning: known_hosts does not exist!"
+			exit
+		else
+			mkdir -p $ssh_path
+			cp $run_path/.ssh/known_hosts $ssh_path
+		fi
+		echo "Generating private and public key..."
+		$dropbearkey -t rsa -f $ssh_path/id_rsa
+		$dropbearkey -y -f $ssh_path/id_rsa | tail -n2 | head -n1 > $ssh_path/id_rsa.pub
+		cat $ssh_path/id_rsa.pub > $ssh_path/authorized_keys
+		cat $ssh_path/authorized_keys | $ssh $host_dev_user@$host_bridge_ip 'cat >> ~/.ssh/authorized_keys'
+		[ ! -d "/.ssh" ] && mkdir -p /.ssh
+		[ ! -d "/root/.ssh" ] && mkdir -p /root/.ssh
+		cp $ssh_path/* /.ssh/ && cp $ssh_path/* /root/.ssh/
+		$scp -i $run_path/.ssh/id_rsa ${security_path}/npu_cfg $host_dev_user@$host_bridge_ip:/usr/sbin/npu_cfg
+		if [ $? -ne 0 ]; then
+			echo "Error, setup NPU(ssh/dropbear) env failed! please check host ssh server!"
+			exit
+		fi
+		$ssh $host_dev_user@$host_bridge_ip touch $host_auth_keys
+		$ssh $host_dev_user@$host_bridge_ip chmod +x $host_auth_keys
+
+		sed -i 's/host_first_setup=1/host_first_setup=0/g' ${security_path}/npu_cfg
+	fi
+else
+	echo "Recovering ssh/dropbear key from backup path after reboot..."
+	[ ! -d "/.ssh" ] && mkdir -p /.ssh && cp $ssh_path/* /.ssh/
+	[ ! -d "/root/.ssh" ] && mkdir -p /root/.ssh && cp $ssh_path/* /root/.ssh/
+
+	$scp -i /.ssh/id_rsa ${security_path}/npu_cfg $host_dev_user@$host_bridge_ip:/usr/sbin/npu_cfg
+	if [ $? -ne 0 ]; then
+		echo "Error, recovering ssh/dropbear key failed!"
+		exit
+	fi
+fi
+
+if [ "$extra_cfg_onboard" == "1" ]; then
+	echo "Extra configurations on device..."
+	restart_rpecat
+fi
+
+echo "Initialize NPU(ssh/dropbear) environment success!"

@@ -1,0 +1,12 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_194_TO_v37_4_0_195 Version v37.4.0.194 to version v37.4.0.195 changes
+ *
+ * \subsection v37_4_0_194_TO_v37_4_0_195Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.194 and v37.4.0.195
+ * \li \ref qcsapi_wifi_set_ecc_groups
+ * \li \ref qcsapi_list_to_array32
+ */
+

@@ -1,0 +1,75 @@
+#!/bin/sh
+#
+# Start the network....
+#
+
+base_scripts="/scripts"
+
+. $base_scripts/start-helpers.sh
+
+start() {
+	export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/scripts:/usr/local/bin
+	export LD_LIBRARY_PATH=/lib:/usr/lib
+
+	echo "Enable PCIe target..."
+	wifi_macaddr_configure
+
+	calstate=`get_bootval calstate`
+	meta_info=y
+
+	if [ $calstate == "1" ]
+	then
+		meta_info=n
+	fi
+
+	modprobe qdpc-pcie qdpc_mac0addr=$mac0addr tqe_sem_en=$en_tqe_sem frames_meta_info=$meta_info tx_done_en=y
+
+	echo "Setting up bridge interface br0..."
+	brctl addbr br0
+
+	# Enable DAD, and disable IPv6 operation if MAC-based duplicate link-local address has been found
+	echo "2" > /proc/sys/net/ipv6/conf/br0/accept_dad
+
+	brctl setfd br0 0
+	brctl setageing br0 7200
+
+	br0_mac=$(cat /sys/class/net/pcie0/address)
+	echo "Setting br0 HW address to $br0_mac"
+	ifconfig br0 hw ether $br0_mac
+	ip link set br0 up
+
+	# Disable multicast router: do not send IGMP queries from EP
+	echo "0" > /sys/devices/virtual/net/br0/bridge/multicast_router
+
+	echo "Adding pcie0 interface into br0..."
+	ifconfig pcie0 0.0.0.0 up
+	brctl addif br0 pcie0
+}
+
+stop() {
+	echo -n "Removing bridge interface br0..."
+	brctl delif br0 pcie0
+	brctl delbr br0
+}
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|reload)
+	restart
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
+

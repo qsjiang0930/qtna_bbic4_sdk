@@ -1,0 +1,83 @@
+#! /bin/sh
+
+# only applicable for Quantenna reference boards
+
+default_persistent_path=/mnt/jffs2/
+default_script_path=/scripts/
+config_file=autochan.conf
+scratch_pad=/tmp/${config_file}
+
+if [ $# -lt 3 ]
+then
+    echo "$0 requires a VAP (e.g. wifi0), a parameter name and its (updated) value"
+    exit 1
+fi
+
+vap=$1
+parameter_name=$2
+parameter_value=$3
+
+config_path=${default_persistent_path}${config_file}
+if [ ! -f $config_path ]
+then
+    cp ${default_script_path}${config_file} $config_path
+fi
+
+# awk script does the real work.
+# Use the Field Separator concept (FS) to mimic and enforce PHP syntax.
+# END block is entered if the configuration file is empty.
+# Verify output string is still "" before proceeding.
+# Notice the configuration file is expected to have exactly 1 line per radio.
+# This is enforced by calling exit at the end of the per-line block
+# (main block of the awk program.
+
+cat $config_path | awk -v iface=$vap -v parameter_name=$parameter_name -v parameter_value=$parameter_value '
+BEGIN {
+    FS="="
+    separator=""
+    output_string=""
+    found_interface=0
+    found_entry=0
+}
+{
+     if (output_string != "") {
+        separator="\n"
+     }
+
+     if ($1 == "interface") {
+	if (found_interface == 1 && found_entry == 0) {
+            found_entry=1
+            output_string=output_string separator parameter_name "=" parameter_value
+	}
+
+        if ($2 == iface) {
+            found_interface=1
+        } else {
+            found_interface=0
+        }
+    }
+
+    if (found_interface == 1 && $1 == parameter_name) {
+        found_entry=1
+	if (parameter_value != "NULL") {
+            output_string=output_string separator $1 "=" parameter_value
+        }
+    } else {
+        output_string=output_string separator $0
+    }
+}
+END
+{
+    separator="\n"
+    if (found_interface == 0 && found_entry == 0) {
+        output_string=output_string separator "interface=" iface
+        output_string=output_string separator parameter_name "=" parameter_value
+    } else if (found_interface == 1 && found_entry == 0) {
+        output_string=output_string separator parameter_name "=" parameter_value
+    }
+
+    print output_string
+}
+' > $scratch_pad
+mv -f ${config_path} ${config_path}.bak
+mv -f ${scratch_pad} ${config_path}

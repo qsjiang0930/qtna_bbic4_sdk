@@ -1,0 +1,8 @@
+config BR2_PACKAGE_ZHOSTAPD
+	bool "zhostapd"
+	default y
+	select BR2_PACKAGE_QTN_SECURITY
+	help
+	  EAP, RADIUS client, etc.
+
+	  Sourced from the Prism driver.

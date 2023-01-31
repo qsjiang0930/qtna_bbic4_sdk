@@ -1,0 +1,14 @@
+#! /bin/sh
+
+bv=`parse_cmdline $1`
+
+if [ -z "$bv" ] && [ -f /proc/bootcfg/env ]
+then
+	bv=`cat /proc/bootcfg/env | grep ^$1= | sed -e 's/.*=//g'`
+fi
+
+if [ -z "$bv" ]
+then
+	bv=0
+fi
+echo $bv

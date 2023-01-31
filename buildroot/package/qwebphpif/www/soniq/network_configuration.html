@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quantenna Communications</title>
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/sb-admin-2.css" rel="stylesheet">
+    <!-- Custom Fonts -->
+    <!-- style CSS -->
+    <link href="css/style.css" rel="stylesheet">
+
+    <link href="css/dashboard.css" rel="stylesheet">
+    <!-- Switch CSS -->
+    <link href="css/basic.css" rel="stylesheet">
+
+    <link href="css/main.css" rel="stylesheet">
+
+    <link href="css/font-awesome.css" rel="stylesheet" type="text/css" />
+
+    <link href="css/animate.css" rel="stylesheet">
+    <!-- jQuery Version 1.11.0 -->
+    <script src="js/jquery-1.11.0.js"></script>
+        <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.js"></script>
+    <!-- Metis Menu Plugin JavaScript -->
+    <script src="js/metisMenu.js"></script>
+    <!-- Custom Theme JavaScript -->
+    <script src="js/sb-admin-2.js"></script>
+    <!-- Common JavaScript -->
+    <script src="js/common.js"></script>
+
+</head>
+
+<body>
+	<div id="wrapper">
+        <nav class="navbar navbar-default navbar-fixed-top nav-color" role="navigation" style="background-image: url(img/sonicheader_bg1.png); height: 70px; width: 100%;">
+            <div class="container">
+                <button type="button" class="navbar-toggle navbtn-position" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="" id="back_home"><img src="img/Quantenna_Main_Logowhite.png" height="42px" width="200px" class="logo" style="margin-top:12px;"></a>
+            </div>
+        </nav>
+        <div class="container" style="margin-top:60px;padding-left:0px;padding-right:0px;">
+            <div class="row">
+                <div class="col-md-3 col-sm-3" style="padding:0px;">
+                    <div class="sidebar2" role="navigation" id="side_bar" style="padding-left:0px;">
+                        <div class="sidebar-nav navbar-collapse" id="side-menu">
+                            <div class="leftmain">
+                                 <ul class="nav" id="menu">
+                                 </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-9 col-sm-9 rightmain">
+                    <div class="container-fluid right_header">Network Configuration</div>
+                    <div class="container-fluid" style="padding-left:0px; padding-right:0px;">
+                        <div class="network_config animated fadeInRight">
+                            <div class="network_config_top" style="margin-bottom:10px;">
+                                <div class="row" style="padding-right:0px;">
+                                    <div class="col-sm-9" style="height: 60px; line-height: 60px; padding-right: 0px;">
+                                        Dual-Band Consistancy:
+                                    </div>
+                                    <div class="col-sm-3" style="height: 60px;padding-right:0px;">
+                                        <button type="button" class="network_config_btn" onclick="display();" id="display"></button>
+                                    </div>
+                                </div>
+                                <div class="alert alert-warning alert-dismissible h" role="alert" style="height:50px;display:none;" id="alert24G">
+                                    <button type="button" class="close" onclick="$('#alert24G').hide();"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                                    <strong><i style="margin-right:5px;float:left;"><img src="img/loading.gif" height="16px" width="16px" id="loading24G" style="float:left;"><span id="sta_appin" style="margin-left:3px;float:left;font-size:16px;">Saving...</span><span id="sta_appin24G" style="font-size:16px;">Save is completed.</span></i></strong>
+                                </div>
+                            </div>
+                            <div class="network_config_content">
+                                <div class="config1 none" id="config1">
+                                    <form class="form-horizontal mt30" role="form">
+                                        <div class="form-group">
+                                            <label class="col-sm-3 control-label pconfig">SSID:</label>
+                                            <div class="col-sm-9">
+                                                <input class="form-control" id="ssid">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="col-sm-3 control-label pconfig">Encription:</label>
+                                            <div class="col-sm-9">
+                                                <select class="form-control" id="encription">
+                                                    <option value="0">WPA2-Personal</option>
+                                                    <option value="1">None</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group" id="password_group">
+                                            <label class="col-sm-3 control-label pconfig">Password:</label>
+                                            <div class="col-sm-9">
+                                                <input class="form-control" id="password">
+                                            </div>
+                                        </div>
+                                    </form>
+                                    <div class="save_con"><button type="button" class="save_btn" onclick="write_config_network();">Save</button></div>
+                                </div>
+                                <div class="config2 none" id="config2">
+                                    <div class="network_system_box">
+                                        <div id="divDlock_1" class="DivBlockgai">
+                                            <div class="system_box" onClick="showdiv('contentid1','showtext1')">
+                                                <h4>2.4G Network Configuration</h4>
+                                                <img src="img/block_unwrap.png" id="showtext1">
+                                            </div>
+                                            <div class="textgai" id="contentid1" style="display:block;">
+                                                <div class="textgai_content">
+                                                    <form class="form-horizontal" role="form">
+                                                        <div class="form-group">
+                                                            <label class="col-sm-3 control-label pconfig">SSID:</label>
+                                                            <div class="col-sm-9">
+                                                                <input class="form-control" id="ssid24G_con">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label class="col-sm-3 control-label pconfig">Encription:</label>
+                                                            <div class="col-sm-9">
+                                                                <select class="form-control" id="encription24G_con">
+                                                                    <option value="0">WPA2-Personal</option>
+                                                                    <option value="1">None</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group" id="password24G_group">
+                                                            <label class="col-sm-3 control-label pconfig">Password:</label>
+                                                            <div class="col-sm-9">
+                                                                <input class="form-control" id="password24G_con">
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="network_system_box">
+                                        <div id="divDlock_2" class="DivBlockgai">
+                                            <div class="system_box" onClick="showdiv('contentid2','showtext2')">
+                                                <h4>5G Network Configuration</h4>
+                                                <img src="img/block_unwrap.png" id="showtext2">
+                                            </div>
+                                            <div class="textgai" id="contentid2" style="display:block;">
+                                                <div class="textgai_content">
+                                                    <form class="form-horizontal" role="form">
+                                                        <div class="form-group">
+                                                            <label class="col-sm-3 control-label pconfig">SSID:</label>
+                                                            <div class="col-sm-9">
+                                                                <input class="form-control" id="ssid5G_con">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label class="col-sm-3 control-label pconfig">Encription:</label>
+                                                            <div class="col-sm-9">
+                                                                <select class="form-control" id="encription5G_con">
+                                                                    <option value="0">WPA2-Personal</option>
+                                                                    <option value="1">None</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group" id="password5G_group">
+                                                            <label class="col-sm-3 control-label pconfig">Password:</label>
+                                                            <div class="col-sm-9">
+                                                                <input class="form-control" id="password5G_con">
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="save_con"><button type="button" class="save_btn" onclick="write_config_network();">Save</button></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /#mainbody -->
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12 footer">© 2016 Quantenna Communications, Inc. All Rights Reserved.</div>
+            </div>
+        </div>
+	</div><!-- /#wrapper -->
+</body>
+<div class="shelter" id="div_shelter"></div>
+<div class="loading" id="div_loading"><img src="img/loading.gif"></div>
+<script type="text/javascript">
+var curr_ssid = 0;
+var curr_encription = 0;
+var curr_password = 0;
+var curr_ssid5G = 0;
+var curr_encription5G = 0;
+var curr_password5G = 0;
+var curr_ssid24G = 0;
+var curr_encription24G = 0;
+var curr_password24G = 0;
+var result;
+$(document).ready(function()
+{
+    validate_token();
+
+    $.ajax(
+    {
+        type        : 'POST',
+        url         : 'server/configuration.php',
+        dataType    : 'json',
+        timeout     : ajax_timeout,
+        data        : {action:"read_config_network"},
+        success     : function(json)
+        {
+            result = json.result;
+            if(json.result == 0){
+                document.getElementById("config1").style.display="none";
+                document.getElementById("config2").style.display="block";
+                document.getElementById("display").innerHTML="Off";
+            }else if(json.result == 1){
+                document.getElementById("config1").style.display="block";
+                document.getElementById("config2").style.display="none";
+                document.getElementById("display").innerHTML="On";
+            }
+            document.getElementById("ssid24G_con").value = json.ssid24G;
+            document.getElementById("encription24G_con").value = json.encription24G;
+            document.getElementById("password24G_con").value = json.password24G;
+
+            document.getElementById("ssid5G_con").value = json.ssid5G;
+            document.getElementById("encription5G_con").value = json.encription5G;
+            document.getElementById("password5G_con").value = json.password5G;
+
+            curr_ssid = json.ssid5G;
+            curr_encription = json.encription5G;
+            curr_password = json.password5G;
+            document.getElementById("ssid").value = curr_ssid;
+            document.getElementById("encription").value = curr_encription;
+            document.getElementById("password").value = curr_password;
+
+            curr_ssid5G = json.ssid5G;
+            curr_encription5G = json.encription5G;
+            curr_password5G = json.password5G;
+
+            curr_ssid24G = json.ssid24G;
+            curr_encription24G = json.encription24G;
+            curr_password24G = json.password24G;
+
+            if (curr_encription == "WPA2-Personal")
+            {
+                encription.options[0].selected = true;
+            }
+            else if (curr_encription == "None")
+            {
+                encription.options[1].selected = true;
+                document.getElementById("password_group").style.display = "none";
+            }
+
+            if (curr_encription24G == "WPA2-Personal")
+            {
+                encription24G_con.options[0].selected = true;
+            }
+            else if (curr_encription24G == "None")
+            {
+                encription24G_con.options[1].selected = true;
+                document.getElementById("password24G_group").style.display = "none";
+            }
+
+            if (curr_encription5G == "WPA2-Personal")
+            {
+                encription5G_con.options[0].selected = true;
+            }
+            else if (curr_encription5G == "None")
+            {
+                encription5G_con.options[1].selected = true;
+                document.getElementById("password5G_group").style.display = "none";
+            }
+        },
+        error       : function()
+        {
+            alert("Ajax Failed");
+        }
+    });
+});
+
+function showdiv(targetid,objN){
+    var target=document.getElementById(targetid);
+    var clicktext=document.getElementById(objN);
+
+    if (target.style.display=="block"){
+        target.style.display="none";
+        clicktext.src = "img/block_wrap.png";
+    } else {
+        target.style.display="block";
+        clicktext.src = "img/block_unwrap.png";
+    }
+}
+
+function display(){
+    var config1 = document.getElementById("config1").style.display;
+    var config2 = document.getElementById("config2").style.display;
+    if(config1 == "block"){
+        document.getElementById("config1").style.display = "none";
+        document.getElementById("config2").style.display = "block";
+        document.getElementById("display").innerHTML="Off";
+    }else if(config1 == "none"){
+        document.getElementById("config1").style.display = "block";
+        document.getElementById("config2").style.display = "none";
+        document.getElementById("display").innerHTML="On";
+    }
+}
+
+
+function ajax_call_event(ajax_call_data)//Ajax_write => ajax_call_event, Tansfer_Ajax => ajax_call_data
+{
+    $.ajax(
+    {
+        type        : 'POST',
+        url         : 'server/configuration.php',
+        timeout     : ajax_timeout,
+        data        : {action:"write_config_network",data:ajax_call_data},
+        beforeSend  : function(){
+            document.getElementById("alert24G").style.display="block";
+            document.getElementById("sta_appin24G").style.display="none";
+        },
+        complete    : function(){},
+        success     : function(json)
+        {
+            document.getElementById("loading24G").style.display="none";
+            document.getElementById("sta_appin").style.display="none";
+            document.getElementById("sta_appin24G").style.display="block";
+            setInterval("cat()",3000);
+        },
+        error       : function()
+        {
+            alert("Ajax Failed");
+        }
+    })
+}
+
+function cat(){
+    $.ajax(
+    {
+        type        : 'POST',
+        url         : 'server/configuration.php',
+        timeout     : ajax_timeout,
+        data        : {action:"cat_config_network"},
+        success     : function(){
+        },
+        error       : function()
+        {
+            alert("Ajax Failed");
+        }
+    })
+}
+
+
+function write_config_network()
+{
+    var parameter_num = 0,
+    ajax_call_data = Array();
+    var new_ssid = $("#ssid").val(),
+        new_encription_select = $("#encription").val(),
+        new_encription,
+        new_password = $("#password").val();
+
+    var new_ssid24G = $("#ssid24G_con").val(),
+        new_encription_select24G = $("#encription24G_con").val(),
+        new_encription24G,
+        new_password24G = $("#password24G_con").val();
+
+    var new_ssid5G = $("#ssid5G_con").val(),
+        new_encription_select5G = $("#encription5G_con").val(),
+        new_encription5G,
+        new_password5G = $("#password5G_con").val();
+
+    if(new_encription_select == 0)
+    {
+        new_encription = "WPA2-Personal";
+    }else if(new_encription_select == 1)
+    {
+        new_encription = "None";
+    }
+
+    if(new_encription_select24G == 0)
+    {
+        new_encription24G = "WPA2-Personal";
+    }else if(new_encription_select24G == 1)
+    {
+        new_encription24G = "None";
+    }
+
+    if(new_encription_select5G == 0)
+    {
+        new_encription5G = "WPA2-Personal";
+    }else if(new_encription_select5G == 1)
+    {
+        new_encription5G = "None";
+    }
+
+    pw = document.getElementById("password");
+    pw.value=pw.value.replace(/(\")/g, '\"');
+    if (pw.value.length < 8 || pw.value.length > 64)
+    {
+        alert("Allowed Password is 8 to 63 ASCII characters or 64 Hexadecimal digits");
+        return false;
+    }
+
+    pw = document.getElementById("password5G_con");
+    pw.value=pw.value.replace(/(\")/g, '\"');
+    if (pw.value.length < 8 || pw.value.length > 64)
+    {
+        alert("Allowed Password is 8 to 63 ASCII characters or 64 Hexadecimal digits");
+        return false;
+    }
+
+    pw = document.getElementById("password24G_con");
+    pw.value=pw.value.replace(/(\")/g, '\"');
+    if (pw.value.length < 8 || pw.value.length > 64)
+    {
+        alert("Allowed Password is 8 to 63 ASCII characters or 64 Hexadecimal digits");
+        return false;
+    }
+
+
+    if(result == 0){
+        var innerhtml;
+        innerhtml = document.getElementById("display").innerHTML;
+        if(innerhtml == "On"){
+            //Set SSID;
+            ajax_call_data[parameter_num] = new Array;
+            ajax_call_data[parameter_num][0] = "ESSID";
+            ajax_call_data[parameter_num][1] = new_ssid;
+            parameter_num++;
+
+            //Set Encription;
+            ajax_call_data[parameter_num] = new Array;
+            ajax_call_data[parameter_num][0] = "Encription";
+            ajax_call_data[parameter_num][1] = new_encription;
+            parameter_num++;
+
+
+            //Set Password;
+            ajax_call_data[parameter_num] = new Array;
+            ajax_call_data[parameter_num][0] = "Password";
+            ajax_call_data[parameter_num][1] = new_password;
+            parameter_num++;
+
+        }
+    }else if(result == 1){
+        //Set SSID;
+        if(new_ssid != curr_ssid)
+        {
+            ajax_call_data[parameter_num] = new Array;
+            ajax_call_data[parameter_num][0] = "ESSID";
+            ajax_call_data[parameter_num][1] = new_ssid;
+            parameter_num++;
+        }
+
+        //Set Encription;
+        if(new_encription != curr_encription)
+        {
+            ajax_call_data[parameter_num] = new Array;
+            ajax_call_data[parameter_num][0] = "Encription";
+            ajax_call_data[parameter_num][1] = new_encription;
+            parameter_num++;
+        }
+
+        //Set Password;
+        if(new_password != curr_password)
+        {
+            ajax_call_data[parameter_num] = new Array;
+            ajax_call_data[parameter_num][0] = "Password";
+            ajax_call_data[parameter_num][1] = new_password;
+            parameter_num++;
+        }
+    }
+
+    //Set SSID24G;
+    if(new_ssid24G != curr_ssid24G)
+    {
+        ajax_call_data[parameter_num] = new Array;
+        ajax_call_data[parameter_num][0] = "ESSID24G";
+        ajax_call_data[parameter_num][1] = new_ssid24G;
+        parameter_num++;
+    }
+
+    //Set Encription24G;
+    if(new_encription24G != curr_encription24G)
+    {
+        ajax_call_data[parameter_num] = new Array;
+        ajax_call_data[parameter_num][0] = "Encription24G";
+        ajax_call_data[parameter_num][1] = new_encription24G;
+        parameter_num++;
+    }
+
+    //Set Password24G;
+    if(new_password24G != curr_password24G)
+    {
+        ajax_call_data[parameter_num] = new Array;
+        ajax_call_data[parameter_num][0] = "Password24G";
+        ajax_call_data[parameter_num][1] = new_password24G;
+        parameter_num++;
+    }
+
+    //Set SSID5G;
+    if(new_ssid5G != curr_ssid5G)
+    {
+        ajax_call_data[parameter_num] = new Array;
+        ajax_call_data[parameter_num][0] = "ESSID5G";
+        ajax_call_data[parameter_num][1] = new_ssid5G;
+        parameter_num++;
+    }
+
+    //Set Encription5G;
+    if(new_encription5G != curr_encription5G)
+    {
+        ajax_call_data[parameter_num] = new Array;
+        ajax_call_data[parameter_num][0] = "Encription5G";
+        ajax_call_data[parameter_num][1] = new_encription5G;
+        parameter_num++;
+    }
+
+    //Set Password5G;
+    if(new_password5G != curr_password5G)
+    {
+        ajax_call_data[parameter_num] = new Array;
+        ajax_call_data[parameter_num][0] = "Password5G";
+        ajax_call_data[parameter_num][1] = new_password5G;
+        parameter_num++;
+    }
+
+
+    if(ajax_call_data.length == 0)
+    {
+        if(result == 1)
+        {
+            alert("consistency!");
+        }else if(result == 0){
+            alert("No Change!");
+        }
+    }
+    else
+    {
+        ajax_call_event(ajax_call_data);
+    }
+}
+</script>
+</html>

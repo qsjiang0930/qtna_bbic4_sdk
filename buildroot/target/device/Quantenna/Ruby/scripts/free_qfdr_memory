@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# Because QV864 master and slave use unified image, all of the necessary components for master and slave are built in same image.
+# To save the resource at runtime, the slave unique components should be removed on master, such as 2.4G related components, remote QCSAPI service,
+# the master unique components should be removed on slave, such as tftp service, web service.
+
+. import_qtnenv
+
+if [ "$platform_id" != "482" ]; then
+	exit
+fi
+
+if [ "$qfdr_master_board" = "y" ]; then
+	rm -f /etc/init.d/S55qwe
+	rm -f /etc/init.d/S55rpc
+
+	rm -f /lib/wlan/wlan1.sh
+	rm -f /root/auth
+	rm -f /root/flash
+	rm -f /root/iwcontrol
+	rm -f /root/iwpriv
+	rm -f /root/rtlinfo
+	rm -f /root/rtlscan
+	rm -f /root/webs
+	rm -f /root/wscd
+	rm -f /root/*.sh
+	rm -rf /root/script
+
+	find /lib/modules/ -name rtl8192cd.ko | xargs rm -f
+
+	rmmod qdpc_host
+else
+	rm -f /etc/init.d/S80tftpd-hpa
+	rm -f /etc/init.d/S92httpd
+
+	rm -f /sbin/mini_httpd
+	rm -f /usr/lib/cgi-bin/php-cgi
+	rm -f /usr/sbin/in.tftpd
+
+	rm -rf /var/www
+fi

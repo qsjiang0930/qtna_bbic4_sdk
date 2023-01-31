@@ -1,0 +1,85 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+. $base_scripts/start-helpers.sh
+
+cred_orig=
+pkey_file=
+cred_temp=/tmp/output_cred
+
+find_feat_cred_file()
+{
+	if [ -f $feat_cred_file ]; then
+		cred_orig=$feat_cred_file
+	elif [ -f $feat_cred_file_mnt ]; then
+		cred_orig=$feat_cred_file_mnt
+	elif [ -f $feat_cred_file_tmp ]; then
+		cred_orig=$feat_cred_file_tmp
+	fi
+}
+
+find_feat_pkey_file()
+{
+	if [ -f $feat_pkey_file ]; then
+		pkey_file=$feat_pkey_file
+	elif [ -f $feat_pkey_file_mnt ]; then
+		pkey_file=$feat_pkey_file_mnt
+	elif [ -f $feat_pkey_file_tmp ]; then
+		pkey_file=$feat_pkey_file_tmp
+	fi
+}
+
+vrfy_feat_cred_from_file()
+{
+	if [ ! -f $cred_orig ]; then
+		return
+	fi
+	if [ ! -f $pkey_file ]; then
+		return
+	fi
+
+	openssl rsautl -verify -in $cred_orig -inkey $pkey_file -pubin -out $cred_temp
+}
+
+load_feat_cred_from_file()
+{
+	if [ ! -f $cred_temp ]; then
+		return
+	fi
+
+	cred_cust=$(get_param_from_file cust $cred_temp '=')
+	if [ -z $cred_cust ]; then
+		return
+	fi
+
+	cred_plat=$(get_param_from_file plat $cred_temp '=')
+	if [ -z $cred_plat ]; then
+		return
+	fi
+
+	cred_feat=$(get_param_from_file feat $cred_temp '=')
+	if [ -z $cred_feat ]; then
+		return
+	fi
+
+	cred_sign=$(get_param_from_file sign $cred_temp '=')
+	if [ -z $cred_sign ]; then
+		return
+	fi
+
+	echo "cust=$cred_cust"
+	echo "plat=$cred_plat"
+	echo "feat=$cred_feat"
+	echo "sign=$cred_sign"
+
+	qdrvcmd set cred_cust "$cred_cust"
+	qdrvcmd set cred_plat "$cred_plat"
+	qdrvcmd set cred_feat "$cred_feat"
+	qdrvcmd set cred_sign "$cred_sign"
+}
+
+find_feat_cred_file
+find_feat_pkey_file
+vrfy_feat_cred_from_file
+load_feat_cred_from_file
+

@@ -1,0 +1,111 @@
+#!/bin/sh
+
+. import_qtnenv
+
+sync_supplicant() {
+	perform_cmd_on_remote "cat $persistent_path/wpa_supplicant.conf 2>/dev/null" > /tmp/wpa_supplicant.conf
+
+	if [ "$(md5sum $persistent_path/wpa_supplicant.conf | awk '{print $1}')" = "$(md5sum /tmp/wpa_supplicant.conf | awk '{print $1}')" ]; then
+		rm -f /tmp/wpa_supplicant.conf
+		return
+	fi
+
+	cat /tmp/wpa_supplicant.conf > $persistent_path/wpa_supplicant.conf
+	rm -f /tmp/wpa_supplicant.conf
+
+	if [ "$1" != "with-apply" ]; then
+		return
+	fi
+
+	call_qcsapi apply_security_config wifi0
+}
+
+sync_hostapd() {
+	perform_cmd_on_remote "cat $persistent_path/hostapd.conf 2>/dev/null" > /tmp/hostapd.conf
+
+	if [ "$(md5sum $persistent_path/hostapd.conf | awk '{print $1}')" = "$(md5sum /tmp/hostapd.conf | awk '{print $1}')" ]; then
+		rm -f /tmp/hostapd.conf
+		return
+	fi
+
+	cat /tmp/hostapd.conf > $persistent_path/hostapd.conf
+	rm -f /tmp/hostapd.conf
+
+	if [ "$1" != "with-apply" ]; then
+		return
+	fi
+
+	if [ "$(get_qfdr_running_mode)" != "Access point" ]; then
+		call_qcsapi reload_security_config wifi1
+	else
+		call_qcsapi reload_security_config wifi0
+	fi
+}
+
+sync_wireless() {
+	perform_cmd_on_remote "cat $persistent_path/wireless_conf.txt 2>/dev/null" > $persistent_path/wireless_conf.txt
+}
+
+sync_qfdr() {
+	perform_cmd_on_remote "cat $persistent_path/qfdr.conf 2>/dev/null" > $persistent_path/qfdr.conf
+}
+
+sync_qwe() {
+	perform_cmd_on_remote "cat $persistent_path/qwe.conf 2>/dev/null" > $persistent_path/qwe.conf
+	cat $persistent_path/qwe.conf > /tmp/qwe.conf
+	perform_cmd_on_remote "cat $persistent_path/qwe.macallow 2>/dev/null" > $persistent_path/qwe.macallow
+	perform_cmd_on_remote "cat $persistent_path/qwe.macdeny 2>/dev/null" > $persistent_path/qwe.macdeny
+
+	if [ "$1" != "with-apply" ]; then
+		return
+	fi
+
+	run_in_background qweaction wlan1 commit
+}
+
+sync_specify() {
+	if [ "$1" = "" ]; then
+		return
+	fi
+	perform_cmd_on_remote "cat $1 2>/dev/null" > $1
+}
+
+usage_and_exit() {
+	cat <<EOF
+Usage: $0 <config> [with-apply]
+Commands:
+	supplicant [with-apply]	: sync wpa_supplicant.conf between master and slave, append "with-apply" to apply the new config to wpa_supplicant daemon
+	hostapd	[with-apply]	: sync hostapd.conf between master and slave, append "with-apply" to apply the new config to hostapd daemon
+	wireless		: sync wireless_conf.txt between master and slave
+	qfdr			: sync qfdr.conf between master and slave
+	qwe			: sync qwe.conf between master and slave
+	specify			: sync specified file between master and slave
+EOF
+	exit 1
+}
+
+case $1 in
+	supplicant)
+		sync_supplicant $2
+		;;
+	hostapd)
+		sync_hostapd $2
+		;;
+	wireless)
+		sync_wireless
+		;;
+	qfdr)
+		sync_qfdr
+		;;
+	qwe)
+		sync_qwe $2
+		;;
+	specify)
+		sync_specify $2
+		;;
+	*)
+		usage_and_exit
+		;;
+esac
+
+echo "complete"

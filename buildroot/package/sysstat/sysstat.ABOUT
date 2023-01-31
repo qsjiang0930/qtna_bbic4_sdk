@@ -1,0 +1,14 @@
+about_resource: sysstat
+name: System performance tools
+homepage_url: http://pagesperso-orange.fr/sebastien.godard/
+description: System performance tools for the Linux operating system
+
+license_name: GNU General Public License Version 2
+license_expression: gpl-2.0
+license_file: ../../../gpl-2.0.LICENSE
+
+copyright: (C) 1999-2011 Sebastien Godard (sysstat <at> orange.fr)
+
+redistribute: y
+attribute: y
+modified: n

@@ -1,0 +1,51 @@
+#!/bin/sh
+
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/scripts:/usr/local/bin
+export LD_LIBRARY_PATH=/lib:/usr/lib
+
+bootcfg_storefile=/env.img
+if [ -e $bootcfg_storefile ]; then
+	modprobe bootcfg store=$bootcfg_storefile
+else
+	modprobe bootcfg
+fi
+
+calstate=`get_bootval calstate`
+if [ $calstate == "0" ]; then
+	# calstate 0 - System with only serial console.
+	# No driver loading, no starting of daemons etc
+	echo "calstate is 0 (console only)"
+	exit 0
+fi
+
+qlink=$(get_bootval qlink)
+if [ $qlink != 0 ]
+then
+	start_scripts_dir=init.d/qlink.d
+else
+	start_scripts_dir=init.d
+fi
+
+# Start all init scripts in /etc/init.d
+# executing them in numerical order.
+#
+for i in /etc/"$start_scripts_dir"/S??* ;do
+
+     # Ignore dangling symlinks (if any).
+     [ ! -f "$i" ] && continue
+
+     case "$i" in
+	*.sh)
+	    # Source shell script for speed.
+	    (
+		trap - INT QUIT TSTP
+		set start
+		. $i
+	    )
+	    ;;
+	*)
+	    # No sh extension, so fork subprocess.
+	    $i start
+	    ;;
+    esac
+done

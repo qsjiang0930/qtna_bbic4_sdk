@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# This script is to start and stop quantenna radio peer entry services.
+
+base_scripts="/scripts"
+
+. $base_scripts/start-helpers.sh
+
+start()
+{
+	export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/scripts:/usr/local/bin
+	export LD_LIBRARY_PATH=/lib:/usr/lib
+	echo "Starting qrpe daemon..."
+	qrpe -D
+}
+
+stop()
+{
+	echo "Stopping qrpe daemon..."
+	kill `pidof qrpe`
+}
+
+restart()
+{
+        stop
+        start
+}
+
+case "$1" in
+	start)
+	start
+	;;
+	stop)
+	stop
+	;;
+	restart|reload)
+	restart
+	;;
+	*)
+	echo $"Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?

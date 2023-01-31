@@ -1,0 +1,6 @@
+config BR2_PACKAGE_LIBNL3
+	bool "libnl3"
+	default n
+	help
+	 Netlink protocol library suite
+	 https://www.infradead.org/~tgr/libnl/

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+cmd=$(which $1)
+
+if [ "$cmd" = "" ]; then
+	echo "$0: $1 does not exist or not executable"
+	return
+fi
+
+shift
+if [ $# = 0 ]; then
+	start-stop-daemon -S -b -x $cmd
+else
+	start-stop-daemon -S -b -x $cmd -- $@
+fi
+
+

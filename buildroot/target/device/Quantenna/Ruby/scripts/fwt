@@ -1,0 +1,7 @@
+#!/bin/sh
+if [ "$1" = "dump" ] ; then
+    cat /proc/topaz_fwt
+else
+    echo $* > /proc/topaz_fwt_if
+fi
+

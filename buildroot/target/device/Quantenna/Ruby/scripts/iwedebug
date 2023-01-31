@@ -1,0 +1,45 @@
+#!/bin/sh
+
+cmd=$1
+interval=$2
+
+if [ -z $cmd ]; then
+	cmd="on"
+fi
+
+if [ -z $interval ]; then
+	interval="1"
+fi
+
+case $cmd in
+"on")
+	if [ ! -f /tmp/iwevent.pid ]; then
+		if_name=`ifconfig | grep eth | head -1 | cut -d \  -f 1`
+		if [ "$if_name" == "" ]; then
+			if_name=`ifconfig | grep pcie | cut -d \  -f 1`
+		fi
+
+		echo iwevent -i $if_name
+		iwevent -i $if_name &
+		echo $! > /tmp/iwevent.pid
+
+		echo "pktlogger 0 start iwevent $interval" > /sys/devices/qdrv/control
+	fi
+	;;
+"off")
+	if [ -f /tmp/iwevent.pid ]; then
+		echo "pktlogger 0 stop iwevent" > /sys/devices/qdrv/control
+
+		pid=`cat /tmp/iwevent.pid`
+		kill -0 $pid > /dev/null 2>&1
+		if [ $? = 0 ]; then
+			kill -2 $pid
+		fi
+		rm /tmp/iwevent.pid
+	fi
+	;;
+*)
+	echo "Usage: $0 [ on | off ] [interval]"
+	exit 1
+	;;
+esac

@@ -1,0 +1,22 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_91_TO_v37_4_0_92 Version v37.4.0.91 to version v37.4.0.92 changes
+ *
+ * \subsection v37_4_0_91_TO_v37_4_0_92Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.91 and v37.4.0.92
+ * \li \ref qcsapi_isspace
+ * \li \ref qcsapi_wifi_get_scs_active_chan_list
+ * \li \ref qcsapi_wps_configure_ap
+ * \li \ref qcsapi_wifi_set_ac_agg_hold_time
+ * \li \ref qcsapi_wifi_get_icac_status
+ * \li \ref qcsapi_wifi_set_scs_active_chan_list
+ * \li \ref qcsapi_wifi_get_ac_agg_hold_time
+ *
+ * \subsection v37_4_0_91_TO_v37_4_0_92Removed Removed functions
+ *
+ * The following functions were removed between versions v37.4.0.91 and v37.4.0.92
+ * \li \ref qcsapi_wifi_set_scs_ch_enable_disable
+ */
+

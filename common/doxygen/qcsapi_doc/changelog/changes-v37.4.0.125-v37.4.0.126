@@ -1,0 +1,15 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_125_TO_v37_4_0_126 Version v37.4.0.125 to version v37.4.0.126 changes
+ *
+ * \subsection v37_4_0_125_TO_v37_4_0_126Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.125 and v37.4.0.126
+ * \li \ref qcsapi_wifi_set_dfs_s_radio_chan_off
+ * \li \ref qcsapi_wifi_set_dfs_available_channel
+ * \li \ref qcsapi_wifi_set_extender_key
+ * \li \ref qcsapi_wifi_get_dfs_s_radio_chan_off
+ * \li \ref qcsapi_wifi_get_wps_ie_scanned_AP
+ */
+

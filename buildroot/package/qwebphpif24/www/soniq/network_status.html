@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quantenna Communications</title>
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/sb-admin-2.css" rel="stylesheet">
+    <!-- Custom Fonts -->
+    <!-- style CSS -->
+    <link href="css/style.css" rel="stylesheet">
+
+    <link href="css/dashboard.css" rel="stylesheet">
+    <!-- Switch CSS -->
+    <link href="css/basic.css" rel="stylesheet">
+
+    <link href="css/main.css" rel="stylesheet">
+
+    <link href="css/font-awesome.css" rel="stylesheet" type="text/css" />
+
+    <link href="css/animate.css" rel="stylesheet">
+    <!-- jQuery Version 1.11.0 -->
+    <script src="js/jquery-1.11.0.js"></script>
+        <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.js"></script>
+    <!-- Metis Menu Plugin JavaScript -->
+    <script src="js/metisMenu.js"></script>
+    <!-- Custom Theme JavaScript -->
+    <script src="js/sb-admin-2.js"></script>
+    <!-- Common JavaScript -->
+    <script src="js/common.js"></script>
+</head>
+
+<body>
+	<div id="wrapper">
+        <nav class="navbar navbar-default navbar-fixed-top nav-color" role="navigation" style="background-image: url(img/sonicheader_bg1.png); height: 70px; width: 100%;">
+            <div class="container">
+                <button type="button" class="navbar-toggle navbtn-position" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="" id="back_home"><img src="img/Quantenna_Main_Logowhite.png" height="42px" width="200px" class="logo" style="margin-top:12px;"></a>
+            </div>
+        </nav>
+        <div class="container" style="margin-top:60px;padding-left:0px;padding-right:0px;">
+            <div class="row">
+                <div class="col-md-3 col-sm-3" style="padding:0px;">
+                    <div class="sidebar2" role="navigation" id="side_bar" style="padding-left:0px;">
+                        <div class="sidebar-nav navbar-collapse" id="side-menu">
+                            <div class="leftmain">
+                                <div id="firstpane" class="menu_list">
+                                    <ul class="nav" id="menu">
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-9 col-sm-9 rightmain">
+                    <div class="container-fluid right_header">Network Status</div>
+                    <div class="container-fluid" style="padding-left:0px; padding-right:0px;" id="device_item_list">
+                        <div class="network_chart animated fadeInRight">
+                            <div class="network_chart_header">
+                                Free Air Time(FAT)
+                            </div>
+                            <div class="flot-chart dashboard-chart" style="margin-top:20px;">
+                                <div class="flot-chart-content" id="flot-dashboard-chart" style="width:90%;margin:0 auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /#mainbody -->
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12 footer">© 2016 Quantenna Communications, Inc. All Rights Reserved.</div>
+            </div>
+        </div>
+	</div><!-- /#wrapper -->
+</body>
+<div class="shelter" id="div_shelter"></div>
+<div class="loading" id="div_loading"><img src="img/loading.gif"></div>
+<script src="js/jquery.flot.js"></script>
+<script src="js/jquery.flot.resize.js"></script>
+<script src="js/jquery.flot.spline.js"></script>
+<script type="text/javascript">
+$(document).ready(function()
+{
+    validate_token();
+});
+
+// Chart Data Sample
+// {"label":"00:26:86:11:22:33", "data":[[0,900],[1,910],[2,890]]},{"label":"00:26:86:11:22:44", "data":[[0,600],[1,610],[2,690]]}
+var chart_data = [];
+
+// To push new data into Chart Data for a known BSS
+var tmp_chart_data;
+
+//To push new Chart Data object
+var tmp_single_bss_data;
+
+// Xaxis value, increase steps is 1
+var xaxis_value=0;
+
+//Update interval in ms
+var updateInterval = 1000;
+
+//Chart object
+var plot;
+
+function check_bss_mac(mac)
+{
+    for (var i=0;i<chart_data.length;i++)
+    {
+        if (chart_data[i].label == mac)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+function chart_data_insert(bss_index,fat){
+    var tmp_data=[];
+    tmp_data.push([0,fat]);
+    for(var i=1;i<chart_data[bss_index].data.length;i++)
+    {
+        tmp_data.push([i,chart_data[bss_index].data[i-1][1]]);
+    }
+    chart_data[bss_index].data = tmp_data;
+}
+
+function init_tmp_single_bss_data()
+{
+    var tmp_init_tmp_single_bss_data=[];
+    for(var i=0;i<20;i++)
+    {
+        tmp_init_tmp_single_bss_data.push([i,0]);
+    }
+    return tmp_init_tmp_single_bss_data;
+}
+
+function update() {
+    xaxis_value=xaxis_value+1;
+    if (xaxis_value == 21)
+        {xaxis_value = 0;}
+    // Since the axes don't change, we don't need to call plot.setupGrid()
+    $.ajax(
+    {
+        type        : 'GET',
+        url         : 'server/soniq.php',
+        dataType    : 'json',
+        timeout     : ajax_timeout,
+        data        : {action:'get_bss_fat_info'},
+        beforeSend  : function() {},
+        complete    : function() {},
+        success     : function(json)
+        {
+            for(var m = 0; m < json.length; m++){
+                var bss_index = check_bss_mac(json[m].mac);
+                if( bss_index > -1)
+                {
+                    chart_data_insert(bss_index,json[m].fat);
+                }
+                else
+                {
+                    tmp_single_bss_data = init_tmp_single_bss_data();
+                    tmp_single_bss_data[0][1]=json[m].fat;
+                    chart_data.push({
+                        label:  json[m].mac,
+                        data:   tmp_single_bss_data
+                    });
+                }
+            }
+            plot=$.plot($("#flot-dashboard-chart"),
+                chart_data,{
+                    series: {
+                    shadowSize: 0   // Drawing is faster without shadows
+                },
+                yaxis: {
+                },
+                xaxis: {
+                    show: false
+                }
+            });
+            plot.setData(chart_data);
+            plot.draw();
+            setTimeout(update, updateInterval);
+        },
+        error       : function()
+        {
+        }
+    });
+}
+
+window.onload = function()
+{
+
+    update();
+
+    var content="";
+    var content1 = '<div class="network_data container green animated fadeInRight">'+
+                    '<div class="network_data_left"><span><img src="img/wifi_green.png"></span></div>'+
+                    '<div class="network_data_right container"><div class="row"><div class="col-md-5"><div class="network_data_master"><span>'+
+                    '<p class="master_top" style="color: #3bb66e;">11:22:33:aaaaaaa:22</p><p class="master_bottom" id="role3">master</p></span></div></div>'+
+                    '<div class="col-md-5"><div class="network_data_device"><span><p class="master_top" style="color: #3bb66e;"></p>'+
+                    '<p class="master_bottom">Assiciated Devices</p></span></div></div><div class="col-md-2"><div class="network_data_mode">'+
+                    '<span><p id="mode24G3" style="color: #3bb66e;"></p><p id="mode5G3" style="color: #3bb66e;"></p></span></div></div></div></div></div>';
+
+
+    var ressum = [];
+    $.ajax(
+    {
+        type        : 'GET',
+        url         : 'server/soniq.php',
+        dataType    : 'json',
+        timeout     : ajax_timeout,
+        data        : {action:'get_device_info'},
+        beforeSend  : function() {},
+        complete    : function() {},
+        success     : function(data)
+        {
+            for (var m =0;m<data.length;m++)
+            {
+                var bss_dual_band = 0;
+                var bss_assoc_5G = 0;
+                var bss_assoc_24G = 0;
+                var current_bss = data[m].bss;
+                for (var n=0;n<current_bss.length;n++)
+                {
+                    if (current_bss[n].band == "2.4G"){
+                        bss_dual_band=1;
+                        bss_assoc_24G = bss_assoc_24G + current_bss[n].assoc.length;
+                    }
+                    else if (current_bss[n].band == "5G"){
+                        bss_assoc_5G = bss_assoc_5G + current_bss[n].assoc.length;
+                    }
+                }
+
+                var bss_assoc_sum=bss_assoc_5G+bss_assoc_24G;
+
+                if (data[m].role == "master")
+                {
+                     content = content + '<div class="network_data container blue animated fadeInRight">'+
+                            '<div class="network_data_left"><span><img src="img/wifi_blue.png"></span></div>'+
+                            '<div class="network_data_right container"><div class="row"><div class="col-md-4"><div class="network_data_master"><span>'+
+                            '<p class="master_top" style="color: #3681e8;">'+data[m].mac+'</p><p class="master_bottom">Master</p></span></div></div>';
+
+                     if (bss_dual_band == 0)
+                        {
+                            content = content +  '<div class="col-md-4"><div class="network_data_device"><span><p class="master_top" style="color: #3681e8;">'+bss_assoc_sum+'</p>'+
+                                        '<p class="master_bottom">Assiciated Devices</p></span></div></div><div class="col-md-4"><div class="network_data_mode">'+
+                                        '<div class="center"><table style="width:100px;"><tr><td style="text-align:right;color:#3681e8;font-size:19px;width:50px;margin-top:2px;">5G</td><td><span class="number">'+bss_assoc_5G+'</span></td></tr></table></div></div></div></div></div></div>';
+                        }
+                        else
+                        {
+
+                            content = content +  '<div class="col-md-4"><div class="network_data_device"><span><p class="master_top" style="color: #3681e8;">'+bss_assoc_sum+'</p>'+
+                                        '<p class="master_bottom">Assiciated Devices</p></span></div></div><div class="col-md-4"><div class="network_data_mode">'+
+                                        '<div class="center"><table style="width:100px;"><tr><td style="text-align:right;color:#3681e8;margin-top:2px;font-size:19px;width:50px;margin-top:2px;">5G</td><td><span class="number">'+bss_assoc_5G+'</span></td></tr><tr><td style="text-align:right;color:#3681e8;font-size:19px;margin-top:2px;>2.4G</td><td><span class="number">'+bss_assoc_24G+'</span></td></tr></table></div></div></div></div></div></div>';
+                        }
+                }
+                else
+                {
+                     content = content + '<div class="network_data container green animated fadeInRight">'+
+                            '<div class="network_data_left"><span><img src="img/wifi_green.png"></span></div>'+
+                            '<div class="network_data_right container"><div class="row"><div class="col-md-4"><div class="network_data_master"><span>'+
+                            '<p class="master_top" style="color: #3bb66e;">'+data[m].mac+'</p><p class="master_bottom">Slave</p></span></div></div>';
+
+                     if (bss_dual_band == 0)
+                    {
+                        content = content +  '<div class="col-md-4"><div class="network_data_device"><span><p class="master_top" style="color: #3bb66e;">'+bss_assoc_sum+'</p>'+
+                                    '<p class="master_bottom">Assiciated Devices</p></span></div></div><div class="col-md-4"><div class="network_data_mode">'+
+                                    '<div class="center"><table style="width:100px;"><tr><td style="text-align:right;color:#3bb66e;margin-top:2px;font-size:19px;width:50px;margin-top:2px;">5G</td><td><span class="number">'+bss_assoc_5G+'</span></td></tr></table></div></div></div></div></div></div>';
+                    }
+                    else
+                    {
+
+                        content = content +  '<div class="col-md-4"><div class="network_data_device"><span><p class="master_top" style="color: #3bb66e;">'+bss_assoc_sum+'</p>'+
+                                    '<p class="master_bottom">Assiciated Devices</p></span></div></div><div class="col-md-4"><div class="network_data_mode">'+
+                                    '<div class="center"><table style="width:100px;"><tr><td style="text-align:right;color:#3bb66e;margin-top:2px;font-size:19px;width:50px;margin-top:2px;">5G</td><td><span class="number">'+bss_assoc_5G+'</span></td></tr><tr><td style="text-align:right;color:#3bb66e;font-size:19px;margin-top:2px;">2.4G</td><td><span class="number">'+bss_assoc_24G+'</span></td></tr></table></div></div></div></div></div></div>';
+                    }
+                }
+            }
+            $("#device_item_list").append(content);
+
+        },
+        error       : function()
+        {
+            alert("Ajax Failed");
+        }
+    });
+}
+</script>
+</html>

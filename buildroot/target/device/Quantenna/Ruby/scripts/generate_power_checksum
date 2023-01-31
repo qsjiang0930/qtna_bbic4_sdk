@@ -1,0 +1,34 @@
+#! /bin/sh
+
+power_table_dir=/etc/power_tables
+bootcfg_dir=/proc/bootcfg
+opt_dir=`get_bootval power_table_path`
+
+file_num=$(find $power_table_dir -name "tx_power_*.txt" | wc -l)
+if [ ${file_num} -gt 0 ]
+then
+	for file in $power_table_dir/tx_power_*.txt
+	do
+		checksum=`md5sum ${file} | cut -d ' ' -f 1`
+		echo "set power_table_checksum ${file} ${checksum}" > /sys/devices/qdrv/control
+	done
+else
+	echo -e "Warning: No power table was found in $power_table_dir"
+fi
+
+if [ -d $opt_dir -a -f $opt_dir/power_table.conf ]
+then
+	file_num=$(find $opt_dir -name "tx_power_*.txt" | wc -l)
+	if [ ${file_num} -gt 0 ]
+	then
+		for file in $opt_dir/tx_power_*.txt
+		do
+			checksum=`md5sum ${file} | cut -d ' ' -f 1`
+			echo "set power_table_checksum ${file} ${checksum}" > /sys/devices/qdrv/control
+		done
+	else
+		echo -e "Warning: No power table was found in $opt_dir"
+	fi
+fi
+
+echo "set lock_checksum_list" > /sys/devices/qdrv/control

@@ -1,0 +1,291 @@
+#! /bin/sh
+#
+# Description
+#   Restore factory default configuration other than mode (AP or Station) and
+#   then reboot.
+#
+# Usage
+#   restore_default_config [-m {sta | ap}] [-q] [-nr] [-ip] [-sd] [-w]
+#
+# Parameters
+#   -m      Force mode to AP or Station
+#   -q      Use qcsapi to determine mode and security file path
+#   -nr     Don't reboot
+#   -ip     Force factory IP address
+#   -sd     Only restore security daemon config
+#   -w      Only restore wireless config in '/mnt/jff2/wireless_conf.txt'
+
+# Default config
+base_scripts="/scripts"
+. $base_scripts/start-helpers.sh
+
+get_default_ip()
+{
+	board_id=`call_qcsapi -u get_board_parameter board_id`
+
+	if [ $? -eq 0 ]; then
+		if [ $board_id = 1215 ] || [ $board_id = 1217 ]; then
+			get_ep_init_ipaddr
+			return
+		fi
+	fi
+
+	[ "$1" == "ap" ] && echo "192.168.1.100"
+	[ "$1" == "sta" ] && echo "192.168.1.200"
+}
+
+wifi_mode='ap'
+default_sta_ip_addr=$(get_default_ip sta)
+default_ap_ip_addr=$(get_default_ip ap)
+default_netmask="255.255.255.0"
+default_hostapd_conf="/scripts/hostapd.conf"
+default_wpa_supplicant_conf="/scripts/wpa_supplicant.conf"
+
+# Active config
+active_dir="/mnt/jffs2"
+active_ipaddr_file="$active_dir/ipaddr"
+active_netmask_file="$active_dir/netmask"
+active_wireless_conf="$active_dir/wireless_conf.txt"
+active_iot_conf="$active_dir/iot"
+active_3addr_bridge="$active_dir/3addr_bridge_disable"
+active_wfa_conf="$active_dir/wfa_testing"
+active_hostapd_conf_name="hostapd.conf"
+active_wpa_supplicant_conf_name="wpa_supplicant.conf"
+active_bamask="$active_dir/bamask"
+active_ibamask="$active_dir/ibamask"
+active_per_ssid_config="$active_dir/per_ssid_config.txt"
+
+procname=$(basename $0)
+
+usage_string="Usage: $procname [-m {sta | ap | repeater}] [-q] [-nr] [-ip] [-sd] [-w]"
+no_reboot=0
+use_qcsapi=0
+force_mode=0
+ip_reset=0
+daemon_only=0
+wireless_conf_only=0
+
+echo_with_logging "$procname $@"
+
+while [ "$1" != "" ]; do
+	case "$1" in
+	-nr)	no_reboot=1
+		;;
+	-q)	use_qcsapi=1
+		;;
+	-m)	wifi_mode=$2
+		force_mode=1
+		shift
+		;;
+	-ip)	ip_reset=1
+		;;
+	-sd)	daemon_only=1
+		;;
+	-w)	wireless_conf_only=1
+		;;
+	-*)     echo $usage_string
+		exit 1
+		;;
+	esac
+	shift
+done
+
+if [ $wifi_mode != "ap" ] && [ $wifi_mode != "sta" ] && [ $wifi_mode != "repeater" ]
+then
+	echo $usage_string
+	exit 1
+fi
+
+if [ $force_mode = 0 ]; then
+	if [ $use_qcsapi = 1 ]; then
+		mode_desc=`call_qcsapi -u get_mode $wifi_device`
+		if [ "$mode_desc" == "Station" ]; then
+			wifi_mode='sta'
+		else
+			wifi_mode='ap'
+		fi
+	else
+		if [ -f "$active_wireless_conf" ]; then
+			grep 'mode=sta' "$active_wireless_conf" > /dev/null
+			if [ $? = 0 ]; then
+				wifi_mode='sta'
+			fi
+		fi
+	fi
+fi
+
+staticip_bak=`grep -o "staticip=[01]" $active_wireless_conf | cut -d= -f 2`
+if [ "$staticip_bak" = "" ]; then
+	staticip_bak=0
+fi
+if [ $daemon_only = 0 ]; then
+	restore_wireless_conf $wifi_mode
+	if [ $? -ne 0 ] || [ ! -f "$active_wireless_conf" ]; then
+		exit 1
+	fi
+	wifi_mode=`call_qcsapi -u get_config_param wifi0 mode`
+	if [ $? -ne 0 ]; then
+		echo_with_logging "ERROR: get_config_param failed"
+		exit 1
+	fi
+fi
+
+echo_with_logging "$procname: Updating security config files for mode $wifi_mode"
+check_default_security_files $wifi_mode 1
+
+if [ "$wifi_mode" = "repeater" ]
+then
+	check_default_security_files  "sta" 1
+fi
+
+if [ $daemon_only = 1 ]; then
+	exit 0
+fi
+
+if [ $wifi_mode = 'sta' ]
+then
+    default_ip_addr=$default_sta_ip_addr
+else
+    default_ip_addr=$default_ap_ip_addr
+fi
+
+is_default_staticip=`grep -c "staticip=" $active_wireless_conf`
+
+staticip=`grep -o "staticip=[01]" /mnt/jffs2/wireless_conf.txt | cut -d= -f 2`
+if [ x$staticip = x ]
+then
+	staticip=0
+fi
+
+platform_file=/scripts/platform_id
+if [ -f $platform_file ]; then
+	platform_id=`cat $platform_file`
+else
+	platform_id=00
+fi
+
+# if it is MSMR build
+if [ "$platform_id" == "415" -o "$platform_id" == "425" ]; then
+	#if there is region in uboot, restore it.
+	region=`call_qcsapi -u get_bootcfg_param region`
+	if [ -n $region ]
+	then
+		update_wifi_config wifi0 region $region
+	fi
+
+	# restore MAC address for wifi interface
+	wifi_addr=`call_qcsapi -u get_bootcfg_param wifiaddr`
+	if [ $? -eq 0 ]
+	then
+		echo "$wifi_addr" > /mnt/jffs2/wifi_mac_addrs
+	fi
+
+	echo_with_logging "$procname: platform_id $platform_id: region, wifiaddr restored if applicable"
+fi
+
+if [ $ip_reset = 1 ]
+then
+	echo_with_logging "$procname: Setting IP address to $default_ip_addr"
+	rm -f $active_ipaddr_file
+	echo $default_ip_addr > $active_ipaddr_file
+	echo_with_logging "$procname: Setting Netmask to $default_netmask"
+	rm -f $active_netmask_file
+	echo $default_netmask > $active_netmask_file
+else
+	if [ $is_default_staticip -eq 0 ]
+	then
+		sed -i "s/^/staticip=$staticip\&/" $active_wireless_conf
+	elif [ $staticip -ne $staticip_bak ] && [ $staticip -eq 0 ]
+	then
+		sed -i "s/staticip=$staticip/staticip=$staticip_bak/" $active_wireless_conf
+	fi
+fi
+
+if [ $wireless_conf_only = 1 ]; then
+	exit 0
+fi
+
+touch /mnt/jffs2/enable_autostart
+
+echo_with_logging "$procname: Removing block ACK restrictions"
+rm -f $active_ibamask
+rm -f $active_bamask
+
+if [ -f $active_iot_conf ]
+then
+	echo_with_logging "$procname: Removing $active_iot_conf"
+	rm $active_iot_conf
+fi
+
+if [ -f $active_3addr_bridge ]
+then
+	echo_with_logging "$procname: Removing $active_3addr_bridge"
+	rm $active_3addr_bridge
+fi
+
+rm -f /mnt/jffs2/minihttpd.conf
+rm -f /mnt/jffs2/ntpclient.conf
+rm -f /mnt/jffs2/qharvestd.conf
+
+if [ ! -f /mnt/jffs2/enable_autostart ]
+then
+	echo "" > /mnt/jffs2/enable_autostart
+fi
+
+if [ -f /mnt/jffs2/wds_config.txt ]
+then
+	rm /mnt/jffs2/wds_config.txt
+fi
+
+# remove vlan config file
+if [ -f /mnt/jffs2/vlan_config.txt ]
+then
+	rm /mnt/jffs2/vlan_config.txt
+fi
+
+if [ -f $active_wfa_conf ]
+then
+	echo_with_logging "$procname: Removing $active_wfa_conf"
+	rm $active_wfa_conf
+fi
+
+rm -f /mnt/jffs2/hostapd.accept*
+rm -f /mnt/jffs2/hostapd.deny*
+rm -f /mnt/jffs2/wpa_psk.wifi*
+
+rm -f /mnt/jffs2/bsa_conf.txt
+rm -f /mnt/jffs2/autochan.conf
+rm -f /mnt/jffs2/sysmond.conf
+rm -f /mnt/jffs2/gateway
+rm -f /mnt/jffs2/dns
+
+# restore password to default
+if [ -f /mnt/jffs2/admin.conf ]
+then
+	rm /mnt/jffs2/admin.conf
+	cp -f /etc/admin.conf /mnt/jffs2/admin.conf
+fi
+
+# restore MAC address for ethernet interface
+eth_addr=`call_qcsapi -u get_bootcfg_param ethaddr`
+if [ $? -eq 0 ]
+then
+	echo "$eth_addr" > /mnt/jffs2/eth_macaddr
+fi
+
+if [ "$no_reboot" = 0 ]
+then
+	reboot
+else
+	echo_with_logging "$procname: Configuration has been set to default values. " \
+		"Reboot after customizing to ensure correct operation."
+fi
+
+# remove per-SSID config file
+if [ -f "$active_per_ssid_config" ]
+then
+	rm -f $active_per_ssid_config
+fi
+
+rm -f $feat_cred_file_mnt
+rm -f $feat_pkey_file_mnt

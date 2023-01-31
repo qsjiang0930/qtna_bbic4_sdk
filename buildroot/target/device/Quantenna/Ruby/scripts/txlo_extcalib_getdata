@@ -1,0 +1,33 @@
+#! /bin/sh
+
+band=$1
+remote_filename=$2
+remote_ipaddr=$3
+
+procname=$(basename $0)
+calfilename="/mnt/jffs2/txlo_lpcalib.cal"
+
+for cnt in 1 2 3
+do
+	rm -f $calfilename
+
+	echo "$procname: tftp $cnt: $remote_filename $remote_ipaddr"
+	tftp -g -l $calfilename -r $remote_filename $remote_ipaddr
+
+	if [ -s $calfilename ]
+	then
+		# Read all measured data and save them
+		echo "calcmd 71 0 8 0 1 $band 2 0" > /sys/devices/qdrv/control
+
+		echo "calcmd 20 0 4 0" > /sys/devices/qdrv/control
+
+		echo "$procname: End of Measurement"
+		rm -f $calfilename
+		exit 0
+	fi
+done
+
+echo "$procname: TXLO_EXTCALIB_FAILED: failed to receive data file"
+rm -f $calfilename
+exit 1
+

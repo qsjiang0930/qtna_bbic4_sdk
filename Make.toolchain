@@ -1,0 +1,14 @@
+CURRENT_TOOLCHAIN ?= p1
+gcc_top_dir ?= /usr/local/ARC/arc${CURRENT_TOOLCHAIN}/uclibc
+ifeq ($(CURRENT_TOOLCHAIN), old)
+gcc_top_dir := /usr/local/ARC/gcc
+endif
+export tools_path := ${gcc_top_dir}/bin
+target_prefix := arc-linux-uclibc-
+compile_prefix := ${tools_path}/${target_prefix}
+CROSS_COMPILE := ${compile_prefix}
+ARCH := arc
+CURRENT_MCC ?= _patched
+mcc_top_dir ?= /usr/local/ARC/MetaWare${CURRENT_MCC}
+export mcc_tools_path := ${mcc_top_dir}/arc/bin
+export mcc_top_dir

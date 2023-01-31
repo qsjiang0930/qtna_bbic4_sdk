@@ -1,0 +1,12 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_164_TO_v37_4_0_165 Version v37.4.0.164 to version v37.4.0.165 changes
+ *
+ * \subsection v37_4_0_164_TO_v37_4_0_165Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.164 and v37.4.0.165
+ * \li \ref qcsapi_wifi_get_node_infoset
+ * \li \ref qcsapi_wifi_sub_ioctl
+ */
+

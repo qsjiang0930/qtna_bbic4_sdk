@@ -1,0 +1,5 @@
+#! /bin/sh
+
+echo "set rxgain_params 0 9 0x23 -82 -69 -56 -77" > /sys/devices/qdrv/control
+echo "set rxgain_params 1 9 0x23 -82 -69 -56 -77" > /sys/devices/qdrv/control
+echo "set rxgain_params 2 9 0x23 -82 -69 -56 -77" > /sys/devices/qdrv/control

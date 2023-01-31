@@ -1,0 +1,228 @@
+From 9fa1a0751dc6c5463184c44e9e70af4fbedd7025 Mon Sep 17 00:00:00 2001
+From: leifeng <leifeng@quantenna.com>
+Date: Mon, 17 Jun 2019 07:46:21 +0000
+Subject: [PATCH] fix(BBIC4-12561): Observed 'Send genl failed' message during
+ bsa test,     workaround using another genl familiar for probe request.
+
+Change-Id: Ib7d731216d828bf7a71d3ded5d4b3706365c7520
+Signed-off-by: leifeng <leifeng@quantenna.com>
+---
+ src/qrpe_qtna_driver.c | 135 +++++++++++++++++++++++++++++++++++--------------
+ src/qrpe_qtna_driver.h |   4 ++
+ 2 files changed, 100 insertions(+), 39 deletions(-)
+
+diff --git a/src/qrpe_qtna_driver.c b/src/qrpe_qtna_driver.c
+index 23044e2..862849f 100644
+--- a/src/qrpe_qtna_driver.c
++++ b/src/qrpe_qtna_driver.c
+@@ -483,20 +483,73 @@ static void qrpe_qtna_driver_deinit(void)
+ 	if (g_data.rtm_sock)
+ 		close(g_data.rtm_sock);
+ #ifdef QRPE_QTNA_GENNETLINK
+-	if(g_data.nlcb)
++	if (g_data.nlcb)
+ 		nl_cb_put(g_data.nlcb);
+-	if(g_data.drv_read_nl_sock)
++	if (g_data.drv_read_nl_sock)
+ 		nl_socket_free(g_data.drv_read_nl_sock);
++#ifdef QRPE_DRIVER_PROBE_EVENT
++	if (g_data.drv_read_nl_probe_sock)
++		nl_socket_free(g_data.drv_read_nl_probe_sock);
++#endif
+ #endif
+ }
+ 
+-static int qrpe_qtna_driver_init_read_sockets(void)
++#ifdef QRPE_QTNA_GENNETLINK
++
++static struct nl_sock *qrpe_qtna_create_read_nl_socket(const char *grpname,
++		struct nl_cb *nlcb, nl_recvmsg_msg_cb_t valid_handler)
++{
++	int group = 0;
++	struct nl_sock *nlsock = NULL;
++
++	nlsock = nl_socket_alloc_cb(nlcb);
++	if (NULL == nlsock) {
++		QRPE_ERROR("Failed to alloc nl sock: %s", strerror(errno));
++		return NULL;
++	}
++	nl_socket_disable_seq_check(nlsock);
++	if (nl_socket_modify_cb(nlsock, NL_CB_VALID, NL_CB_CUSTOM,
++		valid_handler, NULL)) {
++		QRPE_ERROR("Failed to modify nl callback: %s", strerror(errno));
++		goto _fail;
++	}
++	if (genl_connect(nlsock)) {
++		QRPE_ERROR("Failed to connect nl sock: %s", strerror(errno));
++		goto _fail;
++	}
++	group = genl_ctrl_resolve_grp(nlsock, QRPE_FAMILY_NAME, grpname);
++	if (group < 0) {
++		QRPE_ERROR("Failed to resolve nl group: %s", strerror(errno));
++		goto _fail;
++	}
++
++	if (nl_socket_add_memberships(nlsock, group, 0) < 0) {
++		QRPE_ERROR("Failed to add membership: %s", strerror(errno));
++		goto _fail;
++	}
++
++	return nlsock;
++
++_fail:
++	nl_socket_free(nlsock);
++	return NULL;
++}
++
++static void qrpe_qtna_set_socket_opt(int sock_fd)
+ {
+ 	int rxbuf = QRPE_RCVBUF_SIZE;
+-	struct sockaddr_nl addr;
+-#ifdef QRPE_QTNA_GENNETLINK
+-	int group;
++
++	if (setsockopt(sock_fd, SOL_SOCKET,
++		SO_RCVBUF, &rxbuf, sizeof(rxbuf)) < 0)
++		QRPE_WARN("Failed to set nl sock rcvbuf to %u: %s",
++			rxbuf, strerror(errno));
++}
++
+ #endif
++
++static int qrpe_qtna_driver_init_read_sockets(void)
++{
++	struct sockaddr_nl addr;
+ 	g_data.rtm_sock = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
+ 	if (g_data.rtm_sock < 0) {
+ 		QRPE_ERROR("Failed to open rtnetlink socket for qtna driver event: %s", strerror(errno));
+@@ -513,54 +566,42 @@ static int qrpe_qtna_driver_init_read_sockets(void)
+ 	}
+ 
+ #ifdef QRPE_QTNA_RTNETLINK
++	int rxbuf = QRPE_RCVBUF_SIZE;
+ 	if (setsockopt(g_data.rtm_sock, SOL_SOCKET,
+-		SO_RCVBUF, &rxbuf, sizeof(rxbuf)) < 0)
++				SO_RCVBUF, &rxbuf, sizeof(rxbuf)) < 0)
+ 		QRPE_WARN("Failed to set nl sock rcvbuf to %u for qtna driver event: %s",
+-			rxbuf, strerror(errno));
++				rxbuf, strerror(errno));
+ 
+ #elif defined QRPE_QTNA_GENNETLINK
+ 	g_data.nlcb = nl_cb_alloc(NL_CB_DEFAULT);
+-	if(NULL == g_data.nlcb) {
++	if (NULL == g_data.nlcb) {
+ 		QRPE_ERROR("Failed to alloc nl cb for qtna driver event: %s", strerror(errno));
+ 		return -1;
+ 	}
+ 
+-	g_data.drv_read_nl_sock = nl_socket_alloc_cb(g_data.nlcb);
+-	if(NULL == g_data.drv_read_nl_sock) {
+-		QRPE_ERROR("Failed to alloc nl sock for qtna driver event: %s", strerror(errno));
+-		return -1;
+-	}
+-	nl_socket_disable_seq_check(g_data.drv_read_nl_sock);
+-	if(nl_socket_modify_cb(g_data.drv_read_nl_sock, NL_CB_VALID, NL_CB_CUSTOM,
+-		qrpe_qtna_receive_genl_message, NULL)) {
+-		QRPE_ERROR("Failed to modify nl callback for qtna driver event: %s", strerror(errno));
+-		return -1;
+-	}
+-	if (genl_connect(g_data.drv_read_nl_sock)) {
+-		QRPE_ERROR("Failed to connect nl sock for qtna driver event: %s", strerror(errno));
+-		return -1;
+-	}
+-	group = genl_ctrl_resolve_grp(g_data.drv_read_nl_sock, QRPE_FAMILY_NAME, QRPE_DRIVER_EVENT);
+-	if (group < 0) {
+-		QRPE_ERROR("Failed to resolve nl group for qtna driver event: %s", strerror(errno));
+-		return -1;
++	g_data.drv_read_nl_sock = qrpe_qtna_create_read_nl_socket(QRPE_DRIVER_EVENT, g_data.nlcb, qrpe_qtna_receive_genl_message);
++	if (g_data.drv_read_nl_sock) {
++		g_data.drv_read_sock = nl_socket_get_fd(g_data.drv_read_nl_sock);
++		qrpe_qtna_set_socket_opt(g_data.drv_read_sock);
+ 	}
+ 
+-	g_data.drv_read_sock = nl_socket_get_fd(g_data.drv_read_nl_sock);
+-	if (g_data.drv_read_sock < 0) {
+-		QRPE_ERROR("Failed to get sock from nl for qtna driver event: %s", strerror(errno));
+-		return -1;
++
++#ifdef QRPE_DRIVER_PROBE_EVENT
++	/* check and init probe request netlink */
++	if (qrpe_qtna_set_param(g_data.ioctl_sock, "wifi0",
++		IEEE80211_PARAM_BSA_PROBE_EVENT_TUNNEL, 1) < 0) {
++
++		QRPE_INFO("This version of qtna driver do not support probe event tunnel!!\n");
++		return 0;
+ 	}
+ 
+-	if (nl_socket_add_memberships(g_data.drv_read_nl_sock, group, 0) < 0) {
+-		QRPE_ERROR("Failed to add membership for qtna driver event: %s", strerror(errno));
+-		return -1;
++	g_data.drv_read_nl_probe_sock = qrpe_qtna_create_read_nl_socket(QRPE_DRIVER_PROBE_EVENT, g_data.nlcb, qrpe_qtna_receive_genl_message);
++	if (g_data.drv_read_nl_probe_sock) {
++		g_data.drv_read_probe_sock = nl_socket_get_fd(g_data.drv_read_nl_probe_sock);
++		qrpe_qtna_set_socket_opt(g_data.drv_read_probe_sock);
+ 	}
+ 
+-	if (setsockopt(g_data.drv_read_sock, SOL_SOCKET,
+-		SO_RCVBUF, &rxbuf, sizeof(rxbuf)) < 0)
+-		QRPE_WARN("Failed to set nl sock rcvbuf to %u for qtna driver event: %s",
+-			rxbuf, strerror(errno));
++#endif
+ #endif
+ 
+ 	return 0;
+@@ -578,6 +619,9 @@ static int qrpe_qtna_driver_init(QRPE_DRV_EVENT_CALLBACK_F cb)
+ 	g_data.rtm_sock = -1;
+ #ifdef QRPE_QTNA_GENNETLINK
+ 	g_data.drv_read_sock = -1;
++#ifdef QRPE_DRIVER_PROBE_EVENT
++	g_data.drv_read_probe_sock = -1;
++#endif
+ #endif
+ 	if (qrpe_qtna_driver_init_read_sockets() < 0) {
+ 		QRPE_WARN("Failed to init socket for qtna driver");
+@@ -654,6 +698,13 @@ static int qrpe_qtna_init_fdset(uint8_t type, fd_set *fds)
+ 	FD_SET(g_data.drv_read_sock, fds);
+ 	if (max_sock < g_data.drv_read_sock)
+ 		max_sock = g_data.drv_read_sock;
++#ifdef QRPE_DRIVER_PROBE_EVENT
++	if (g_data.drv_read_probe_sock >= 0) {
++		FD_SET(g_data.drv_read_probe_sock, fds);
++		if (max_sock < g_data.drv_read_probe_sock)
++			max_sock = g_data.drv_read_probe_sock;
++	}
++#endif
+ #endif
+ 
+ 	return max_sock;
+@@ -1587,6 +1638,12 @@ static void qrpe_qtna_check_and_process_fdset(uint8_t type, fd_set *fds)
+ #ifdef QRPE_QTNA_GENNETLINK
+ 	if (FD_ISSET(g_data.drv_read_sock, fds))
+ 		nl_recvmsgs(g_data.drv_read_nl_sock, g_data.nlcb);
++#ifdef QRPE_DRIVER_PROBE_EVENT
++	if (g_data.drv_read_probe_sock >= 0) {
++		if (FD_ISSET(g_data.drv_read_probe_sock, fds))
++			nl_recvmsgs(g_data.drv_read_nl_probe_sock, g_data.nlcb);
++	}
++#endif
+ #endif
+ }
+ 
+diff --git a/src/qrpe_qtna_driver.h b/src/qrpe_qtna_driver.h
+index 222c2c6..4f6aae3 100644
+--- a/src/qrpe_qtna_driver.h
++++ b/src/qrpe_qtna_driver.h
+@@ -98,6 +98,10 @@ typedef struct {
+ 	struct nl_sock *drv_read_nl_sock;
+ 	struct nl_cb *nlcb;
+ 	int drv_read_sock;
++#ifdef QRPE_DRIVER_PROBE_EVENT
++	struct nl_sock *drv_read_nl_probe_sock;
++	int drv_read_probe_sock;
++#endif
+ #endif
+ 
+ #define QRPE_QTNA_SCAN_MAX_RETRIES	4
+-- 
+2.9.2
+

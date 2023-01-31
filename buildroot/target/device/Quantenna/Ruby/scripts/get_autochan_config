@@ -1,0 +1,62 @@
+#! /bin/sh
+
+# only applicable for Quantenna reference boards
+# Each line in configuration file specifies config for one physical
+# radio interface. Line must start with "interface=" parameter which specifies
+# which interface configuration is described by this line.
+
+default_persistent_path=/mnt/jffs2/
+config_file=autochan.conf
+
+if [ $# -lt 1 ]
+then
+    echo "$0 requires a VAP (e.g. wifi0) and a parameter name"
+    exit 1
+fi
+
+vap=$1
+if [ $# -lt 2 ]
+then
+    parameter_name=""
+else
+    parameter_name=$2
+fi
+
+
+config_path=${default_persistent_path}/${config_file}
+if [ ! -f $config_path ]
+then
+    echo "Autochan parameter configure file $config_path not found"
+    exit 2
+fi
+
+cat $config_path | sed 's/^#.*//g' | awk -v iface=$vap -v parameter_name=$parameter_name '
+BEGIN {
+    FS="="
+    found_interface=0
+    found_entry=0
+}
+{
+    if ($1 == "interface") {
+        if ($2 == iface) {
+	           found_interface = 1
+        } else {
+	           found_interface = 0
+        }
+    }
+
+    if (found_interface && $1 == parameter_name) {
+        found_entry = 1
+
+        print $2
+        exit 0
+    }
+}
+END {
+    if (found_entry == 0)
+    {
+        print "Parameter", parameter_name, "not found for interface", iface
+        exit 1
+    }
+}
+'

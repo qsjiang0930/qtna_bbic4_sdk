@@ -1,0 +1,5 @@
+config BR2_PACKAGE_QDOCK
+	bool "QDOCK"
+	default n
+	help
+	  Quantenna QDocK framework.

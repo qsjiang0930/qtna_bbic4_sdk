@@ -1,0 +1,23 @@
+#!/bin/sh
+
+. import_qtnenv
+
+scs_cfg=$(get_wifi_config wifi0 scs)
+scs_sts=$(call_qcsapi get_scs_status wifi0)
+
+case "$1" in
+disable)
+	if [ "$scs_cfg" = "1" -a "$scs_sts" = "Enabled (1)" ]; then
+		call_qcsapi enable_scs wifi0 0
+	fi
+	;;
+enable)
+	if [ "$scs_cfg" = "1" -a "$scs_sts" = "Disabled (0)" ]; then
+		sleep 5
+		call_qcsapi enable_scs wifi0 1
+	fi
+	;;
+*)
+	echo "$0 Bad parameters: $@" > /dev/console
+	;;
+esac

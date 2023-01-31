@@ -1,0 +1,20 @@
+Index: libnl-3.2.27/lib/idiag/idiag_msg_obj.c
+===================================================================
+--- libnl-3.2.27.orig/lib/idiag/idiag_msg_obj.c
++++ libnl-3.2.27/lib/idiag/idiag_msg_obj.c
+@@ -530,6 +530,7 @@ static void idiag_msg_dump_stats(struct
+ 				sizeof(buf)));
+ 	nl_dump(p, "\treordering: %d\n",
+ 			msg->idiag_tcpinfo.tcpi_reordering);
++#if 0
+ 	nl_dump(p, "\trcv rround trip time: %d\n",
+ 			msg->idiag_tcpinfo.tcpi_rcv_rtt);
+ 	nl_dump(p, "\treceive queue space: %s\n",
+@@ -537,6 +538,7 @@ static void idiag_msg_dump_stats(struct
+ 				sizeof(buf)));
+ 	nl_dump(p, "\ttotal retransmits: %d\n",
+ 			msg->idiag_tcpinfo.tcpi_total_retrans);
++#endif
+ 	nl_dump(p, "]\n");
+ 
+ 	if (msg->idiag_meminfo) {

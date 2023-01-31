@@ -1,0 +1,29 @@
+#! /bin/sh
+
+if [ $# -lt 3 ]
+then
+	echo "Usage: $0 <baseband index> <register offset> <register_value>"
+	echo "where <register offset> is in the range 0 - 255"
+	exit 1
+fi
+
+bb_index=$1
+reg_offset=$2
+reg_value=$3
+
+# write the register
+writerfmem $1 $2 $3
+
+#read it back and trim address and leading 0x[00000] from result
+read_value=`readrfmem $1 $2 | \
+	   awk '{ print $3 }' | \
+	   sed 's/0x00//' | \
+	   sed 's/^0//'| \
+	   sed 's/^0//'| \
+	   sed 's/^0//'| \
+	   sed 's/^0//'`
+
+if [ $reg_value != $read_value ]
+then
+	echo "ERROR: bb $1 reg $2 - wrote $reg_value read $read_value"
+fi

@@ -1,0 +1,156 @@
+#!/bin/sh
+
+# This script is used to start and stop an application.
+#
+# For platform 464, it uses qproc_mon; a process monitor
+# For other platforms, it just runs application or uses cmdloop for the same
+#
+# qproc_mon is a process monitor that monitors running applications and restarts them if they exit.
+# A monitor list (/etc/qproc_mon.conf) contains a list (static) of applications to monitor.
+# A helper utility, qproc_mon_send_event, is used to tell qproc_mon the applications it should
+# start or stop monitoring (dynamic). Applications not in the monitor list are launched and killed
+# in the same way as they are for other (non-464) platforms.
+#
+# Usage of launch script:
+#	/scripts/launch start [OPTIONS] "app_name app_arguments"
+#	For applications not on the monitor list
+#	-l - Use cmdloop to launch application
+#
+#	/scripts/launch stop app_name
+
+kill_process() {
+	# Checking pid is empty
+	local procname=$1
+	local pid=$2
+	local count=0
+
+	if [ ! -n "$pid" ]; then
+		echo "$procname is not running"
+		return
+	fi
+
+	echo "Stopping $procname with pid $pid"
+	kill $pid
+	while true
+	do
+		if [ $count -ge 100 ]; then
+			echo "Force-stopping previous version of $procname with pid $pid"
+			kill -9 $pid
+			break;
+		fi
+
+		if ! pidof $1 > /dev/null; then
+			break
+		fi
+
+		# wait for the application to terminate in case it is being restarted
+		count=`expr $count + 1`
+		usleep 50000
+	done
+}
+
+get_absolute_file_path() {
+	local file_name=`basename $1`
+	local absolute=`echo $1 | cut -c1`
+	if [ "$absolute" == "/" ]; then
+		file_path=$1
+	else
+		file_path=`which $file_name`
+	fi
+}
+
+search_app_name_in_conf_file() {
+	local file_name=`basename $file_path`
+	while IFS='' read -r line || [[ -n "$line" ]]; do
+		if [ "$file_name" == "$line" ]; then
+			return 0
+		fi
+	done < /etc/qproc_mon.conf
+	return 1
+}
+
+start() {
+	local options=`getopt -o dl -- "$@"`
+	local is_loop="0"
+	eval set -- "$options"
+
+	# parse the options
+	while true; do
+		case "$1" in
+		 -l) is_loop="1"; shift;;
+		 --) shift; break;;
+		  *) echo "Not implemented $1"; exit 1;;
+		esac
+	done
+
+	local cmd=$@
+	set -- $cmd
+
+	# $1 onwards contains the name of the app and its command-line args
+	get_absolute_file_path $1
+
+	shift
+	local args=`echo "$@"`
+
+        if [ "$platform_id" == "464" -o "$platform_id" == "468" ]; then
+                search_app_name_in_conf_file
+                if [ $? -eq 0 -a -x "$file_path" ]; then
+			/sbin/qproc_mon_send_event start "$file_path $args"
+                        if [ $? -eq 0 ]; then
+                                return 0
+                        fi
+                fi
+        fi
+
+	if [ "$is_loop" == "0" ]; then
+		$file_path $args
+	else
+		$base_scripts/cmdloop $file_path $args &
+	fi
+	return 0
+}
+
+stop() {
+	# $1 contains the name of the app
+	get_absolute_file_path $1
+
+	if [ "$platform_id" == "464" -o "$platform_id" == "468" ]; then
+		search_app_name_in_conf_file
+		if [ $? -eq 0 -a -x "$file_path" ]; then
+			/sbin/qproc_mon_send_event stop "$file_path"
+			if [ $? -eq 0 ]; then
+				return 0
+			fi
+		fi
+	fi
+
+	local procname="$base_scripts/cmdloop $file_path"
+	local pid=`ps -ww | grep "$procname" | grep -v "grep $procname" | awk '{print $1}'`
+	if [ -n "$pid" ]; then
+		kill_process "$procname" "$pid"
+	fi
+
+	procname=`basename $1`
+	pid=`pidof "$procname"`
+	kill_process "$procname" "$pid"
+	return 0
+}
+
+base_scripts="/scripts"
+platform_id=`cat $base_scripts/platform_id`
+
+case "$1" in
+  start)
+	shift
+	start "$@"
+	;;
+  stop)
+	shift
+	stop $1
+	;;
+  *)
+	echo "Usage: $0 start {0|1} app_name app_arguments"
+	echo "       $0 stop app_name"
+	exit 1
+esac
+exit $?

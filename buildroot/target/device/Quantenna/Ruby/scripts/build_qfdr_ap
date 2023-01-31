@@ -1,0 +1,144 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+
+. ${base_scripts}/start-helpers.sh
+. import_qtnenv
+
+build_5g_ap() {
+	mode=$(call_qcsapi get_qfdr_param 5g_ap_mode)
+
+	if [ "$mode" = "fixed" ]; then
+		ssid=$(call_qcsapi get_qfdr_param 5g_ap_ssid)
+		security=$(call_qcsapi get_qfdr_param 5g_ap_security)
+		key=$(call_qcsapi get_qfdr_param 5g_ap_wpakey)
+	else
+		if ! extract_profile "$1" $qfdr_sta_profile; then
+			echo_with_logging "[QFDR]: $qfdr_local_band fail to extract profile for \"$1\"" > /dev/console
+			return 1
+		fi
+
+		. $qfdr_sta_profile
+
+		key=$psk
+		if [ "$key_mgmt" = "NONE" ]; then
+			security="open"
+		elif [ "$proto" = "WPA RSN" -o "$proto" = "WPA WPA2" ]; then
+			security="mixed"
+		elif [ "$proto" = "RSN" -o "$proto" = "WPA2" ] && [ "$key_mgmt" = "WPA-PSK" ]; then
+			security="wpa2_psk_aes"
+		elif [ "$proto" = "RSN" -o "$proto" = "WPA2" ] && [ "$(echo $key_mgmt | grep WPA-PSK-SHA256)" != "" ]; then
+			security="wpa2_sha_aes"
+		else
+			echo_with_logging "[QFDR]: $qfdr_local_band don't support proto=\"$proto\", key_mgmt=\"$key_mgmt\"" > /dev/console
+			return
+		fi
+	fi
+
+	if [ "$security" = "open" ]; then
+		call_qcsapi set_beacon wifi1 Basic
+		call_qcsapi set_WPA_encryption_modes wifi1 AESEncryption
+		call_qcsapi set_WPA_authentication_mode wifi1 PSKAuthentication
+	elif [ "$security" = "wpa2_psk_aes" ]; then
+		call_qcsapi set_beacon wifi1 11i
+		call_qcsapi set_WPA_encryption_modes wifi1 AESEncryption
+		call_qcsapi set_WPA_authentication_mode wifi1 PSKAuthentication
+	elif [ "$security" = "wpa2_sha_aes" ]; then
+		call_qcsapi set_beacon wifi1 11i
+		call_qcsapi set_WPA_encryption_modes wifi1 AESEncryption
+		call_qcsapi set_WPA_authentication_mode wifi1 SHA256PSKAuthentication
+	elif [ "$security" = "mixed" ]; then
+		call_qcsapi set_beacon wifi1 WPAand11i
+		call_qcsapi set_WPA_encryption_modes wifi1 TKIPandAESEncryption
+		call_qcsapi set_WPA_authentication_mode wifi1 PSKAuthentication
+	fi
+
+	# To prevent 5G AP settings being changed by WPS, set the WPS state to configured if current WPS state is not configured
+	if [ "$(call_qcsapi get_wps_configured_state \"$wifi\")" = "not configured" ]; then
+		call_qcsapi set_wps_configured_state wifi1 2
+	fi
+
+	if [ "$security" != "open" ]; then
+		if [ ${#key} = 64 ]; then
+			call_qcsapi set_pre_shared_key wifi1 0 "$key"
+		else
+			call_qcsapi set_passphrase wifi1 0 "$key"
+		fi
+	fi
+
+	call_qcsapi set_SSID wifi1 "$ssid"
+}
+
+build_24g_ap() {
+	mode=$(call_qcsapi get_qfdr_param 24g_ap_mode)
+	if [ "$mode" = "fixed" ]; then
+		if [ "$(qweaction wlan1 status ap)" != "Up" ]; then
+			run_in_background qweaction wlan1 commit
+		fi
+		return
+	fi
+
+	if ! extract_profile "$1" $qfdr_sta_profile; then
+		echo_with_logging "[QFDR]: $qfdr_local_band fail to extract profile for \"$1\"" > /dev/console
+		return 1
+	fi
+
+	. $qfdr_sta_profile
+
+	if [ "$key_mgmt" = "NONE" ]; then
+		encryption="open"
+	elif [ "$proto" = "WPA RSN" -o "$proto" = "WPA WPA2" ]; then
+		encryption="mixed"
+	elif [ "$proto" = "RSN" -o "$proto" = "WPA2" ] && [ "$key_mgmt" = "WPA-PSK" ]; then
+		encryption="wpa2_aes"
+	elif [ "$proto" = "RSN" -o "$proto" = "WPA2" ] && [ "$(echo $key_mgmt | grep WPA-PSK-SHA256)" != "" ]; then
+		encryption="wpa2_aes"
+	else
+		echo_with_logging "[QFDR]: $qfdr_local_band don't support proto=\"$proto\", key_mgmt=\"$key_mgmt\"" > /dev/console
+		return
+	fi
+	passphrase=$psk
+
+	qweconfig setonce ssid.wlan1 "$ssid"
+	qweconfig setonce encryption.wlan1 $encryption
+	qweconfig setonce passphrase.wlan1 "$passphrase"
+	# To prevent 2.4G AP settings being changed by WPS, set the WPS state to configured if current WPS state is not configured
+	if [ "$(qweconfig get wpsstate.wlan1)" = "1" ]; then
+		qweconfig setonce wpsstate.wlan1 2
+	fi
+
+	run_in_background qweaction wlan1 commit
+}
+
+if [ $# != 2 ]; then
+	echo "Usage: $0 <all|5g|2.4g> <ssid>"
+	exit 1
+fi
+
+if [ "$(call_qcsapi verify_repeater_mode)" != "1" ]; then
+	echo "$0 only available on repeater mode"
+	exit 1
+fi
+
+case "$1" in
+5g)
+	build_5g_ap $2
+	;;
+2.4g)
+	if [ "$qfdr_24g_on_board" = "y" ]; then
+		build_24g_ap $2
+	fi
+	;;
+all)
+	build_5g_ap $2
+	if [ "$qfdr_24g_on_board" = "y" ]; then
+		build_24g_ap $2
+	fi
+	;;
+*)
+	echo "Usage: $0 <all|5g|2.4g> <ssid>"
+	exit 1
+	;;
+esac
+
+echo "complete"

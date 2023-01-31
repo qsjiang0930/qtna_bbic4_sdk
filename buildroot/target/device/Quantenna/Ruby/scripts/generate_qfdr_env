@@ -1,0 +1,108 @@
+#!/bin/sh
+#
+# Scripts to generate environment variable for QFDR
+#
+
+base_scripts="/scripts"
+
+. $base_scripts/start-helpers.sh
+
+platform_id=$(cat $base_scripts/platform_id)
+board_name=$(get_bootval board_name)
+if [ "$board_name" = "0" ]; then
+	board_name=$(get_board_config name)
+fi
+
+if [ "$platform_id" = "482" ]; then
+	# QV864 (FDR without NPU)
+	qfdr_auto_update_ap="y"
+	def_qfdr_mgnvlan="2"
+	if [ "$board_name" = "QHS864_HOST" ]; then
+		def_qfdr_local_ip=$(get_rc_init_ipaddr)
+		def_qfdr_remote_ip=$(get_ep_init_ipaddr)
+		qfdr_local_band="HB"
+		qfdr_remote_band="LB"
+		qfdr_master_board="y"
+		qfdr_hw_pbc_on_board="y"
+	elif [ "$board_name" = "QHS864_CLIENT" ]; then
+		def_qfdr_local_ip=$(get_ep_init_ipaddr)
+		def_qfdr_remote_ip=$(get_rc_init_ipaddr)
+		qfdr_local_band="LB"
+		qfdr_remote_band="HB"
+		qfdr_24g_on_board="y"
+	else
+		exit
+	fi
+elif [ "$platform_id" = "468" ]; then
+	# WFB (FDR with NPU)
+	if [ "$board_name" = "QHS840_HB" ]; then
+		def_qfdr_local_ip="169.254.1.3"
+		def_qfdr_remote_ip="169.254.1.2"
+		qfdr_local_band="HB"
+		qfdr_remote_band="LB"
+	elif [ "$board_name" = "QHS840_LB" ]; then
+		def_qfdr_local_ip="169.254.1.2"
+		def_qfdr_remote_ip="169.254.1.3"
+		qfdr_local_band="LB"
+		qfdr_remote_band="HB"
+	else
+		exit
+	fi
+else
+	exit
+fi
+
+qfdr_local_ip=$(get_bootval qfdr_local_ipaddr)
+qfdr_remote_ip=$(get_bootval qfdr_remote_ipaddr)
+nc_port=$(get_bootval qfdr_nc_port)
+scansync_req_port=$(get_bootval qfdr_scansync_req_port)
+scansync_rep_port=$(get_bootval qfdr_scansync_rep_port)
+
+if [ "$qfdr_local_ip" = "0" -o "$qfdr_remote_ip" = "0" ]; then
+	qfdr_local_ip=$def_qfdr_local_ip
+	qfdr_remote_ip=$def_qfdr_remote_ip
+fi
+
+if [ "$nc_port" = "0" ]; then
+	nc_port="60001"
+fi
+
+if [ "$scansync_req_port" = "0" ]; then
+	scansync_req_port="60002"
+fi
+
+if [ "$scansync_rep_port" = "0" ]; then
+	scansync_rep_port="60003"
+fi
+
+if [ "$platform_id" = "482" ]; then
+	if [ "$qfdr_master_board" = "y" ]; then
+		qfdr_mgnvlan=$(get_bootval qfdr_mgnvlan)
+	else
+		qfdr_mgnvlan=$(get_bootval vlan)
+	fi
+	if [ "$qfdr_mgnvlan" = "0" ]; then
+		qfdr_mgnvlan=$def_qfdr_mgnvlan
+	fi
+	if [ "$qfdr_auto_update_ap" = "y" ]; then
+		qfdr_sta_profile="/tmp/qfdr_sta_profile"
+	fi
+fi
+
+get_security_path
+set_qtnenv persistent_path $security_file_path
+set_qtnenv qfdr_mgnvlan $qfdr_mgnvlan
+set_qtnenv qfdr_auto_update_ap $qfdr_auto_update_ap
+set_qtnenv qfdr_sta_profile $qfdr_sta_profile
+set_qtnenv qfdr_local_band $qfdr_local_band
+set_qtnenv qfdr_remote_band $qfdr_remote_band
+set_qtnenv qfdr_local_ip $qfdr_local_ip
+set_qtnenv qfdr_remote_ip $qfdr_remote_ip
+set_qtnenv nc_port $nc_port
+set_qtnenv scansync_req_port $scansync_req_port
+set_qtnenv scansync_rep_port $scansync_rep_port
+set_qtnenv qfdr_master_board $qfdr_master_board
+set_qtnenv qfdr_24g_on_board $qfdr_24g_on_board
+set_qtnenv qfdr_hw_pbc_on_board $qfdr_hw_pbc_on_board
+set_qtnenv platform_id $platform_id
+set_qtnenv qfdr_platform 1

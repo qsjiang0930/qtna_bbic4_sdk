@@ -1,0 +1,11 @@
+config BR2_PACKAGE_QWE_ADAPTER
+        bool "QWE Adapter"
+        default n
+        help
+          Quantenna Wireless Extension Adapter
+
+config BR2_PACKAGE_QWE_ADAPTER_RPE
+	bool "RPE for QWE Adapter"
+	default n
+	help
+	  RPE for Quantenna Wireless Extension Adapter

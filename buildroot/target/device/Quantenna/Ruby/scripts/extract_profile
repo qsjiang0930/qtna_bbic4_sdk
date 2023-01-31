@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# This script extract the profile of a specified SSID from wpa_supplicant.conf and save to specified file
+
+. import_qtnenv
+
+if [ $# -lt 1 -o $# -gt 2 ]; then
+	echo "Usage: $0 <ssid> [file]"
+	exit 1
+fi
+
+ssid=$1
+if [ $# = 2 ]; then
+	file=$2
+else
+	file=$qfdr_sta_profile
+fi
+supplicant_conf=$persistent_path/wpa_supplicant.conf
+
+line_num=$(sed -n "/^[[:space:]]*ssid=\"$ssid\"/=" $supplicant_conf)
+if [ "$line_num" = "" ]; then
+	echo "Error: don't find network \"$ssid\" in $supplicant_conf"
+	exit 1
+fi
+
+> $file
+while [ 1 ]; do
+	line=$(sed -n "$line_num p" $supplicant_conf)
+	if [ "$line" = "" -o "$line" = "}" ]; then
+		break
+	fi
+	param=$(echo ${line%%=*} | sed 's/[[:space:]]//g')
+	value=${line#*=}
+	if [ "$param" = "ssid" -o "$param" = "psk" ]; then
+		echo "$param=$value" >> $file
+	else
+		echo "$param=\"$value\"" >> $file
+	fi
+	line_num=$((line_num+1))
+done

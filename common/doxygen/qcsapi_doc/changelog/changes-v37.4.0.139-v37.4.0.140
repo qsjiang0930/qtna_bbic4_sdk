@@ -1,0 +1,11 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_139_TO_v37_4_0_140 Version v37.4.0.139 to version v37.4.0.140 changes
+ *
+ * \subsection v37_4_0_139_TO_v37_4_0_140Removed Removed functions
+ *
+ * The following functions were removed between versions v37.4.0.139 and v37.4.0.140
+ * \li \ref qcsapi_wifi_scs_obss_check_enable
+ */
+

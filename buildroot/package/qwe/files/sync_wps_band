@@ -1,0 +1,25 @@
+#!/bin/sh
+
+wps_50g_state="off"
+wps_24g_state="off"
+
+qtn_ap_ifname=$(call_qcsapi -u get_ap_interface_name)
+wps_state=$(call_qcsapi -u get_wps_runtime_state $qtn_ap_ifname)
+if [ "x$wps_state" = "xconfigured" -o "x$wps_state" = "xnot configured" ]; then
+	wps_50g_state="on"
+fi
+
+wps_state=$(qweaction wlan1 wps get_state)
+if [ "x$wps_state" = "xconfigured" -o "x$wps_state" = "xunconfigured" ]; then
+	wps_24g_state="on"
+fi
+
+if [ $wps_50g_state = "on" -a $wps_24g_state = "on" ]; then
+	call_qcsapi -u set_wps_param $qtn_ap_ifname third_party_band 2.4g
+	qweaction wlan1 wps set_dual_band
+	qweaction wlan1 setuuid $(call_qcsapi -u get_wps_param $qtn_ap_ifname uuid)
+elif [ $wps_50g_state = "on" ]; then
+	call_qcsapi -u set_wps_param $qtn_ap_ifname third_party_band none
+elif [ $wps_24g_state = "on" ]; then
+	qweaction wlan1 wps set_single_band
+fi

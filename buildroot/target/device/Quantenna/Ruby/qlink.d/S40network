@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# Start the network....
+#
+
+base_scripts="/scripts"
+
+. $base_scripts/start-helpers.sh
+
+start() {
+
+	echo "Starting network..."
+
+	modprobe switch_vlan
+	modprobe switch_tqe tqe_sem_en=$en_tqe_sem
+
+	config_qtn_regulatory_db
+}
+
+stop() {
+	echo -n "Stopping network..."
+	/sbin/ifdown -a
+}
+
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart|reload)
+		restart
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|restart}"
+		exit 1
+esac
+
+exit $?

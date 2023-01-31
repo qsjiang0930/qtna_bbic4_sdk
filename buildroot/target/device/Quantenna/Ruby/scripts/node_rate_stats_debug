@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# This stats does not depend on wifi
+cmd=$1
+interval=$2
+
+if [ -z $cmd ]; then
+	cmd="on"
+fi
+
+if [ -z $interval ]; then
+	interval="1"
+fi
+
+case $cmd in
+"on")
+	echo "Enabling netdebug for node rate statistics"
+	echo "pktlogger 0 start node_rate_stats $interval" > /sys/devices/qdrv/control
+	;;
+"off")
+	echo "Disabling netdebug for node rate statistics"
+	echo "pktlogger 0 stop node_rate_stats" > /sys/devices/qdrv/control
+	;;
+*)
+	echo "Usage: $0 { on | off } <interval>"
+	exit 1
+	;;
+esac

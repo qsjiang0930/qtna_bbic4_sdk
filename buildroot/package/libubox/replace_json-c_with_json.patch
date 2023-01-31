@@ -1,0 +1,22 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 57804cf..ef32685 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -9,7 +9,7 @@ OPTION(BUILD_LUA "build Lua plugin" ON)
+ OPTION(BUILD_EXAMPLES "build examples" ON)
+
+ INCLUDE(FindPkgConfig)
+-PKG_SEARCH_MODULE(JSONC json-c)
++PKG_SEARCH_MODULE(JSONC json)
+ IF(JSONC_FOUND)
+   ADD_DEFINITIONS(-DJSONC)
+   INCLUDE_DIRECTORIES(${JSONC_INCLUDE_DIRS})
+@@ -42,7 +42,7 @@ INSTALL(TARGETS ubox ubox-static
+ ADD_SUBDIRECTORY(lua)
+ ADD_SUBDIRECTORY(examples)
+
+-find_library(json NAMES json-c)
++find_library(json NAMES json)
+ IF(EXISTS ${json})
+	ADD_LIBRARY(blobmsg_json SHARED blobmsg_json.c)
+	TARGET_LINK_LIBRARIES(blobmsg_json ubox ${json})

@@ -1,0 +1,11 @@
+--- a/tc/Makefile	2019-11-15 10:38:59.815602688 +0800
++++ b/tc/Makefile	2019-11-15 10:39:30.747604299 +0800
+@@ -114,7 +114,7 @@
+ 
+ clean:
+ 	rm -f $(TCOBJ) $(TCLIB) libtc.a tc *.so emp_ematch.yacc.h; \
+-	rm -f emp_ematch.yacc.output
++	rm -f emp_ematch.yacc.*
+ 
+ q_atm.so: q_atm.c
+ 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -fpic -o q_atm.so q_atm.c -latm

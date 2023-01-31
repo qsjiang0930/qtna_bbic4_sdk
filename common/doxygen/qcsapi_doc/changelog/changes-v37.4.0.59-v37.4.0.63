@@ -1,0 +1,19 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_59_TO_v37_4_0_63 Version v37.4.0.59 to version v37.4.0.63 changes
+ *
+ * \subsection v37_4_0_59_TO_v37_4_0_63Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.59 and v37.4.0.63
+ * \li \ref qcsapi_wifi_del_radius_acct_server_cfg
+ * \li \ref qcsapi_wifi_get_chan_usable
+ * \li \ref qcsapi_set_qfdr_parameter
+ * \li \ref qcsapi_get_qfdr_parameter
+ * \li \ref qcsapi_wifi_get_tx_max_amsdu
+ * \li \ref qcsapi_wifi_add_radius_acct_server_cfg
+ * \li \ref qcsapi_wifi_get_radius_acct_server_cfg
+ * \li \ref qcsapi_set_console
+ * \li \ref qcsapi_wifi_set_tx_max_amsdu
+ */
+

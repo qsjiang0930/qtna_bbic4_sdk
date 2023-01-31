@@ -1,0 +1,113 @@
+#!/bin/sh
+
+print_usage()
+{
+	echo "\
+Usage: $(basename $0) {begin | apply | check} <FILE_NAME>
+
+Parameters
+    begin - The command is called at the beginning of file update procedure. The return value
+            is the name of the temporary file. The temporary file should be used as a target
+	    for all configuration modifications. The original file should not be modified.
+
+    apply - The command is called at the end of file update procedure.
+	    The command copies the modified temporary file to the original file.
+
+    check - The command checks the file existence and restores the file from the backup
+            if it is necessary. The command should be called before any read access to the
+	    configuration file.
+
+    FILE_NAME - the name of the configuration file"
+}
+
+print_log()
+{
+	# Uncomment this to enable logging
+	#echo $@ >> /mnt/jffs2/update_config_utility.log
+	:
+}
+
+if [ "$#" -ne 2 ]; then
+	print_usage
+	print_log "Error. Wrong num of params"
+	exit 1
+fi
+
+command=$1
+file_name=$2
+file_name_new=${file_name}.new
+file_name_backup=${file_name}.rrr
+
+print_log "---------------------------------------------------------------"
+print_log "$(basename $0) called. Command: $command, file path: $file_name"
+
+begin () {
+	check
+
+	cp -f ${file_name} ${file_name_new}
+	exit_code=$?
+	print_log "Copy ${file_name} to ${file_name_new}"
+	print_log "Temp file path: ${file_name_new}"
+	print_log "Copy exit code: ${exit_code}"
+
+	echo "${file_name_new}"
+	return ${exit_code}
+}
+
+apply () {
+	cp -f ${file_name} ${file_name_backup}
+	print_log "Copy ${file_name} to ${file_name_backup}"
+
+	rm -f ${file_name}
+	print_log "Remove ${file_name}"
+
+	mv -f ${file_name_new} ${file_name}
+	exit_code=$?
+	print_log "Move ${file_name_new} to ${file_name}"
+	print_log "Move exit code: ${exit_code}"
+
+	rm -f ${file_name_backup}
+	print_log "Remove ${file_name_backup}"
+
+	return ${exit_code}
+}
+
+check () {
+	if [ ! -f $file_name ]
+	then
+		print_log "Main file ${file_name} does not exist"
+		if [ -f ${file_name_backup} ]
+		then
+			print_log "Backup file ${file_name_backup} exist. Restore"
+			mv ${file_name_backup} ${file_name}
+			print_log "Move ${file_name_backup} to ${file_name}"
+			return 0
+		fi
+		print_log "Error. Backup file ${file_name_backup} does not exits."
+		return 1
+	fi
+	print_log "Check OK. Main file ${file_name} exist"
+	return 0
+}
+
+case $command in
+	begin)
+		begin
+		exit $?
+		;;
+	apply)
+		apply
+		exit $?
+		;;
+	check)
+		check
+		exit $?
+		;;
+	*)
+		print_usage
+		print_log "Error. Wrong command"
+		exit 1
+		;;
+esac
+
+exit 1

@@ -1,0 +1,7 @@
+config BR2_PACKAGE_TRACEROUTE
+	bool "traceroute"
+	default n
+	help
+		Traceroute tracks the route packets taken from an IP network
+		on their way to given host.
+

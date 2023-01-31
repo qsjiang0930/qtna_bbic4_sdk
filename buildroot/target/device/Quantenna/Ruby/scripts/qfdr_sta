@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# the value of sta_state_file must be same the value of macro QFDR_STA_STATE_FILE in qcsapi
+sta_state_file=/tmp/fdr_sta_state
+
+case "$1" in
+disable)
+	if [ -f $sta_state_file ]; then
+		sta_state=$(cat $sta_state_file)
+		if [ "$sta_state" = "0" ]; then
+			exit
+		fi
+	fi
+	echo 0 > $sta_state_file
+
+	wpa_cli disconnect > /dev/null
+	call_qcsapi enable_interface wifi0 0
+	# echo "[FDR][$(awk '{print $1}' /proc/uptime)]: STA disabled" > /dev/console
+	;;
+enable)
+	if [ -f $sta_state_file ]; then
+		sta_state=$(cat $sta_state_file)
+		if [ "$sta_state" = "1" ]; then
+			exit
+		fi
+	else
+		# sta_state_file no exist means sta interface was not disabled since boot up,
+		# because sta interface is enabled by default after boot up,
+		# we just need set 1 to sta_state_file in this case
+		echo 1 > $sta_state_file
+		exit
+	fi
+	echo 1 > $sta_state_file
+
+	if [ $# = 2 ]; then
+		# qfdr_sta enable noscan
+		noscan=1
+		# set roaming to MANUAL mode to forbid sta to enter scan state when enable sta
+		iwpriv wifi0 hostroaming 2
+	else
+		noscan=0
+	fi
+
+	call_qcsapi enable_interface wifi0 1
+	if [ $noscan = 1 ]; then
+		wpa_cli reconnect noscan > /dev/null
+	else
+		wpa_cli reconnect > /dev/null
+	fi
+	# echo "[FDR][$(awk '{print $1}' /proc/uptime)]: STA enabled" > /dev/console
+	;;
+*)
+	echo "$0: Bad parameters: $@" > /dev/console
+	;;
+esac

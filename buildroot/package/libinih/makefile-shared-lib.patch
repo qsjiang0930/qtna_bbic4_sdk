@@ -1,0 +1,38 @@
+--- Makefile.static	2018-05-22 09:36:06.000000000 -0400
++++ Makefile.static.modified	2018-05-23 10:15:01.888290125 -0400
+@@ -2,18 +2,29 @@
+ 
+ SRC = ../ini.c
+ OBJ = $(SRC:.c=.o)
+-OUT = libinih.a
++DESTDIR = /usr
++SHARED_LIB = libinih.so
++STATIC_LIB = libinih.a
+ INCLUDES = -I..
+-CCFLAGS = -g -O2
++CCFLAGS = -g -O2 -fPIC
++LDFLAGS = -shared
+ CC = g++
+ 
+-default: $(OUT)
++default: $(SHARED_LIB)
+ 
+ .c.o:
+ 	$(CC) $(INCLUDES) $(CCFLAGS) $(EXTRACCFLAGS) -c $< -o $@
+ 
+-$(OUT): $(OBJ)
+-	ar rcs $(OUT) $(OBJ) $(EXTRAARFLAGS)
++$(STATIC_LIB): $(OBJ)
++	ar rcs $(STATIC_LIB) $(OBJ) $(EXTRAARFLAGS)
++
++$(SHARED_LIB): $(OBJ)
++	$(CC) $(LDFLAGS) -o $@ $^
+ 
++install: $(SHARED_LIB) $(STATIC_LIB)
++	install -m 755 -d $(DESTDIR)
++	install -m 644 $(SHARED_LIB) $(DESTDIR)/lib/$(SHARED_LIB)
++	install -m 644 $(STATIC_LIB) $(DESTDIR)/lib/$(STATIC_LIB)
++	install -m 644 ../ini.h $(DESTDIR)/include/ini.h
+ clean:
+-	rm -f $(OBJ) $(OUT)
++	rm -f $(OBJ) $(SHARED_LIB) $(STATIC_LIB)

@@ -1,0 +1,13 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_203_TO_v37_4_0_204 Version v37.4.0.203 to version v37.4.0.204 changes
+ *
+ * \subsection v37_4_0_203_TO_v37_4_0_204Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.203 and v37.4.0.204
+ * \li \ref qcsapi_ascii_to_hexstr
+ * \li \ref qcsapi_dpp_get_cfg_str
+ * \li \ref qcsapi_wifi_dpp_parameter
+ */
+

@@ -1,0 +1,15 @@
+config BR2_PACKAGE_QHARVEST
+	bool "Qharvest"
+	default n
+	select BR2_PACKAGE_JSON_C
+	select BR2_PACKAGE_LIBCURL
+	select BR2_PACKAGE_OPENSSL
+	select BR2_PACKAGE_ZLIB
+	help
+	  Quantenna Harvest.
+
+config BR2_PACKAGE_QHARVEST_QWE
+	bool "Qharvest with QWE HAL support"
+	default y
+	depends BR2_PACKAGE_QHARVEST
+	depends BR2_PACKAGE_QWE_PAL

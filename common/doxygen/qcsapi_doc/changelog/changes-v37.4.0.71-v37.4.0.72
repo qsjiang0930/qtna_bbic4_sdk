@@ -1,0 +1,19 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_71_TO_v37_4_0_72 Version v37.4.0.71 to version v37.4.0.72 changes
+ *
+ * \subsection v37_4_0_71_TO_v37_4_0_72Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.71 and v37.4.0.72
+ * \li \ref qcsapi_wifi_wds_get_psk
+ * \li \ref qcsapi_wifi_wds_set_psk
+ * \li \ref qcsapi_get_app_core_dump_ext
+ *
+ * \subsection v37_4_0_71_TO_v37_4_0_72Removed Removed functions
+ *
+ * The following functions were removed between versions v37.4.0.71 and v37.4.0.72
+ * \li \ref qcsapi_wds_set_psk
+ * \li \ref qcsapi_get_app_core_dump_size
+ */
+

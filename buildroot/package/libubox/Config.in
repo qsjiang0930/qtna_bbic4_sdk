@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBUBOX
+	bool "libubox"
+	default n
+	help
+	  libubox is required by many of openwrt utilities like uci, ubus
+
+	  https://openwrt.org/docs/techref/libubox

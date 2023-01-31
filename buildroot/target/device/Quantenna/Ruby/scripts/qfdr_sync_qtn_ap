@@ -1,0 +1,263 @@
+#!/bin/sh
+
+# This script will retrieve advanced config (such as MBSS) from remote QTN AP
+
+base_scripts="/scripts"
+
+. ${base_scripts}/start-helpers.sh
+. import_qtnenv
+
+MAX_24G_VAPS=5
+
+
+ref_hostapd_conf=/tmp/.qfdr_hostapd_conf
+ref_ap_conf=/tmp/.ref_ap_conf
+
+# RETURN
+# 0(TRUE)	extract success
+# 1(FALSE)	extract fail
+extract_hostapd() {
+	cp $persistent_path/hostapd.conf $ref_hostapd_conf
+
+	> $ref_ap_conf
+	line_num=1
+	ap_index=1
+	total_lines=$(sed -n "$=" $ref_hostapd_conf)
+	for bss_line_num in $(sed -n "/^bss/=" $ref_hostapd_conf) $((total_lines+1)); do
+		while [ $line_num -lt $bss_line_num ]; do
+			line=$(sed -n "$line_num p" $ref_hostapd_conf)
+			is_note=$(echo "$line" | grep "^#")
+			is_conf=$(echo "$line" | grep "=")
+			if [ "X$is_note" = "X" ] && [ "X$is_conf" != "X" ]; then
+				param=$(echo ${line%%=*} | sed 's/[[:space:]]//g')
+				value=${line#*=}
+				echo "${param}_${ap_index}=\"$value\"" >> $ref_ap_conf
+			fi
+
+			line_num=$((line_num+1))
+		done
+		ap_index=$((ap_index+1))
+	done
+	rm -f $ref_hostapd_conf
+
+	return 0
+}
+
+interval=1			# interval(sec) to resend the probe message
+probe_mcaddr="ff:ff:ff:ff:ff:ff"	# broadcase address as the probe destination address
+
+# to avoid cli timed out by retrying
+qserver_cli_wrapper() {
+	for i in x x x x x; do
+		result=$(qserver_cli $@)
+		timeout=$(echo $result | grep "command timed out")
+		if [ "X$timeout" = "X" ]; then
+			break
+		fi
+	done
+
+	echo $result
+}
+
+# RETURN
+# 0(TRUE)	sync success with remote QTN AP
+# 1(FALSE)	sync fail
+sync_configure_check() {
+	timeout=$((`date +%s` + 60))
+	while [ `date +%s` -le $timeout ]; do
+		sleep 1
+		result=$(qserver_cli_wrapper get_sync_result)
+
+		if [ "$result" = "SYNC_SUCCESS" ] ; then
+			echo_with_logging "[QFDR]: sync config success" > /dev/console
+			return 0
+		elif [ "$result" != "SYNC_PROGRESS" ]; then
+			echo_with_logging "[QFDR]: sync config fail $result" > /dev/console
+			return 1
+		fi
+	done
+
+	echo_with_logging "[QFDR]: sync config timeout" > /dev/console
+
+	return 1
+}
+
+# qserver got probe response from more than one QTN AP
+# we need choose one of them to set the params
+# currently there is no information(ssid/sec/pw, etc) from qserver to help choosing the right one
+# RETURN
+# 0(TRUE)	sync success with remote QTN AP
+# 1(FALSE)	sync fail
+sync_configure_with_one_qtn_ap() {
+	devices=$(qserver_cli_wrapper get_config_device)
+	echo_with_logging "[QFDR]: probed devices from qserver: $devices" > /dev/console
+
+	ucaddr=$(echo $devices | awk '{print $7}')
+	echo_with_logging "[QFDR]: sync with $ucaddr" > /dev/console
+	qserver_cli start_sync $ucaddr $interval
+	sync_configure_check; rc=$?
+
+	return $rc
+}
+
+# qserver probe the qap.
+# INIT: we need choose one of them to set the params
+# PROBE: wait the time out
+# Others: check the sync state
+# RETURN
+# 0(TRUE)	sync success with remote QTN AP
+# 1(FALSE)	sync fail
+sync_configure_with_qtn_ap() {
+	timeout=$((`date +%s` + 60))
+	qserver_cli start_probe $probe_mcaddr $interval
+	echo_with_logging "[QFDR]: start probe remote QTN AP" > /dev/console
+	while [ `date +%s` -le $timeout ]; do
+		sleep 1
+
+		# get and check qserver state
+		state=$(qserver_cli_wrapper get_state)
+
+		if [ "$state" = "INIT" ]; then
+			sync_configure_with_one_qtn_ap; rc=$?
+			qserver_cli reset_state
+			return $rc
+		elif [ "$state" != "PROBE" ]; then
+			sync_configure_check; rc=$?
+			qserver_cli reset_state
+			return $rc
+		fi
+	done
+
+	qserver_cli reset_state
+	echo_with_logging "[QFDR]: probe remote QTN AP timeout" > /dev/console
+	return 1
+}
+
+update_24g_config() {
+	if [ "$(call_qcsapi get_qfdr_param 24g_ap_mode)" = "fixed" ]; then
+		return 1
+	fi
+
+	if ! extract_hostapd; then
+		return 1
+	fi
+
+	. $ref_ap_conf
+
+	same_as_running=1
+	vap_index=1
+	while [ $vap_index -le $MAX_24G_VAPS ]; do
+
+		if [ $vap_index = 1 ]; then
+			vap=""
+		else
+			vap=".vap$((vap_index-2))"
+		fi
+
+		ssid=$(eval echo \${ssid_$vap_index})
+
+		if [ "X$ssid" = "X" ]; then
+			break
+		fi
+
+		key_mgmt=$(eval echo \${wpa_key_mgmt_$vap_index})
+		pairwise=$(eval echo \${wpa_pairwise_$vap_index})
+		passphrase=$(eval echo \${wpa_passphrase_$vap_index})
+		wpa=$(eval echo \${wpa_$vap_index})
+		group_rekey=$(eval echo \${wpa_group_rekey_$vap_index})
+
+		if [ "$wpa" = "0" ]; then
+			encryption="open"
+		elif [ "$wpa" = "3" ]; then
+			encryption="mixed"
+		elif [ "$wpa" = "2" ]; then
+			encryption="wpa2_aes"
+			if [ "$pairwise" = "TKIP" ]; then
+				encryption="wpa2_tkip"
+			fi
+		elif [ "$wpa" = "1" ]; then
+			encryption="wpa_tkip"
+			if [ "$pairwise" = "CCMP" ]; then
+				encryption="wpa_aes"
+			fi
+		else
+			echo_with_logging "[QFDR]: ERROR unknown wpa=$wpa" > /dev/console
+		fi
+
+		if [ "$(qweconfig getrunning enable${vap}.wlan1)" != "1" ] ||
+		   [ "$ssid" != $(qweconfig getrunning ssid${vap}.wlan1) ] ||
+		   [ "$encryption" != $(qweconfig getrunning encryption${vap}.wlan1) ] ||
+		   [ "$passphrase" != $(qweconfig getrunning passphrase${vap}.wlan1) ] ||
+		   [ "$group_rekey" != $(qweconfig getrunning gtkrekey${vap}.wlan1) ]; then
+			same_as_running=0
+		fi
+
+		qweconfig setonce enable${vap}.wlan1 1
+		qweconfig setonce ssid${vap}.wlan1 "$ssid"
+		qweconfig setonce encryption${vap}.wlan1 $encryption
+		qweconfig setonce passphrase${vap}.wlan1 "$passphrase"
+		qweconfig setonce gtkrekey${vap}.wlan1 $group_rekey
+
+		vap_index=$((vap_index+1))
+	done
+	rm -f $ref_ap_conf
+
+	# if vap bss num < running, must set the same_as_running to 0
+	if [ $same_as_running = 1 ] && [ $vap_index -le $MAX_24G_VAPS ] &&
+	   [ "$(qweconfig getrunning enable${vap}.wlan1)" = "1" ]; then
+		same_as_running=0
+	fi
+
+	if [ $same_as_running = 1 ]; then
+		echo_with_logging "[QFDR]: 2.4g configure same as running" > /dev/console
+		# call qweconfig backuprunning to lose efficacy the 2.4G configuration at above
+		qweconfig backuprunning
+		return 1
+	fi
+
+	# To prevent 2.4G AP settings being changed by WPS, set the WPS state to configured if current WPS state is not configured
+	if [ "$(qweconfig get wpsstate.wlan1)" = "1" ]; then
+		qweconfig setonce wpsstate.wlan1 2
+	fi
+
+	qweaction wlan1 commit
+	echo_with_logging "[QFDR]: update 2.4g config" > /dev/console
+}
+
+remove_5g_mbss() {
+	vap_list=$(iwconfig 2>/dev/null | grep -o wifi[2-7])
+	for vap in $vap_list
+	do
+		call_qcsapi wifi_remove_bss $vap
+	done
+}
+
+remove_24g_mbss() {
+	if [ "$(call_qcsapi get_qfdr_param 24g_ap_mode)" = "fixed" ]; then
+		return
+	fi
+
+	# TODO: use qweaction to remove 2.4G MBSS
+	vap_list=$(ifconfig | grep -o wlan0-va[0-3])
+	for vap in $vap_list
+	do
+		ifconfig $vap down
+	done
+}
+
+if [ "$(call_qcsapi get_qfdr_param 5g_ap_mode)" = "fixed" ]; then
+	exit
+fi
+
+if ! sync_configure_with_qtn_ap; then
+	# remove MBSS if sync failed
+	remove_5g_mbss
+	if [ "$qfdr_24g_on_board" = "y" ]; then
+		remove_24g_mbss
+	fi
+	exit
+fi
+
+if [ "$qfdr_24g_on_board" = "y" ]; then
+	update_24g_config
+fi

@@ -1,0 +1,11 @@
+#! /bin/sh
+
+RX_gain_Index=$1
+
+enable_vco_cal 0
+enable_txpow_cal 0
+
+echo "calcmd 72 0 6 0 1 $RX_gain_Index" > /sys/devices/qdrv/control
+
+enable_vco_cal 1
+

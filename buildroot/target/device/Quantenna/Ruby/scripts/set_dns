@@ -1,0 +1,54 @@
+#! /bin/sh
+numargs=$#
+oper=$1
+ip_addr=$2
+dns_str="nameserver"
+conf_file=/mnt/jffs2/resolv.conf
+procname=$(basename $0)
+
+show_usage()
+{
+	echo "$procname {add | del} <ip addr>"
+	echo "$procname list"
+}
+
+if [ ! -f $conf_file ]
+then
+	touch $conf_file
+fi
+
+if [ $numargs -gt 1 ]
+then
+	line=`awk "/^[ \t]*$dns_str[ \t]*$ip_addr([ \t]|$)/ {print NR}" $conf_file | head -n 1`
+        if [ "$line" = "" ] ; then
+		line=0
+	fi
+	if [ $oper = "add" ]
+	then
+		if [ $line -gt 0 ]
+		then
+			echo "Entry is already present"
+			return 1
+		fi
+
+		echo "$dns_str $ip_addr" >> $conf_file
+	elif [ $oper = "del" ]
+	then
+		if [ $line -eq 0 ]
+		then
+			echo "Entry is not present"
+			return 1
+		fi
+		sed -i "${line}d" $conf_file
+	else
+		show_usage
+		return 1
+	fi
+
+elif [ $numargs -eq 1 ] && [ $oper = "list" ]
+then
+	awk '/^[ \t]*nameserver[ \t]/ {print $2}' $conf_file 2> /dev/null
+else
+	show_usage
+	return 1
+fi

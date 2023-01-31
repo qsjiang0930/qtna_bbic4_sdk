@@ -1,0 +1,175 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+
+. ${base_scripts}/start-helpers.sh
+. import_qtnenv
+
+qfdr_wps_state_cmd=/tmp/qfdr_wps_state_cmd
+qfdr_mode=$(get_qfdr_running_mode)
+
+local_qcsapi="call_qcsapi"
+remote_qcsapi="call_qcsapi_sockrpc --host $qfdr_remote_ip"
+
+perform_wps_pbc() {
+	interface=${1:-wifi0}
+	if [ "$qfdr_mode" != "Station" ]; then
+		# if device is running on tri-band AP mode, start WPS PBC session on 5G AP who has lesser station associated
+		assoc_count_local=$($local_qcsapi get_count_assoc $interface)
+		assoc_count_remote=$($remote_qcsapi get_count_assoc $interface)
+		if [ $assoc_count_local -le $assoc_count_remote ]; then
+			$local_qcsapi registrar_report_button_press $interface
+			echo "$local_qcsapi get_wps_state $interface" > $qfdr_wps_state_cmd
+		else
+			$remote_qcsapi registrar_report_button_press $interface
+			echo "$remote_qcsapi get_wps_state $interface" > $qfdr_wps_state_cmd
+		fi
+	else
+		# if device is running on extender mode:
+		# if QFDR don't associate to remote AP, start WPS PBC session on master and slave.
+		# if QFDR associate to remote AP, start WPS PBC session on QFDR AP
+		local_sta_state=$($local_qcsapi get_qfdr_state wifi0)
+		remote_sta_state=$($remote_qcsapi get_qfdr_state wifi0)
+		if [ "$2" = "hw" ]; then
+			interface="wifi1"
+		fi
+		if [ "$local_sta_state" = "1" -a "$remote_sta_state" = "1" ]; then
+			$local_qcsapi enrollee_report_button_press wifi0
+			$remote_qcsapi enrollee_report_button_press wifi0
+			echo "$0 get_dual_sta_wps_state" > $qfdr_wps_state_cmd
+		elif [ "$local_sta_state" = "0" ]; then
+			# means local radio is AP role
+			$local_qcsapi registrar_report_button_press $interface
+			echo "$local_qcsapi get_wps_state $interface" > $qfdr_wps_state_cmd
+		elif [ "$remote_sta_state" = "0" ]; then
+			# means remote radio is AP role
+			$remote_qcsapi registrar_report_button_press $interface
+			echo "$remote_qcsapi get_wps_state $interface" > $qfdr_wps_state_cmd
+		fi
+	fi
+
+	# if the PBC is triggered by HW, also start WPS PBC session on 2.4G AP
+	if [ "$2" = "hw" ]; then
+		$remote_qcsapi qwe qweaction wlan1 wps pbc
+	fi
+}
+
+perform_wps_pin() {
+	interface=${1:-wifi0}
+	if [ "$qfdr_mode" != "Station" ]; then
+		# if device is running on tri-band AP mode, start WPS PIN session 5G AP who has lesser station associated
+		assoc_count_local=$($local_qcsapi get_count_assoc $interface)
+		assoc_count_remote=$($remote_qcsapi get_count_assoc $interface)
+		if [ $assoc_count_local -le $assoc_count_remote ]; then
+			$local_qcsapi registrar_report_pin $interface $2
+			echo "$local_qcsapi get_wps_state $interface" > $qfdr_wps_state_cmd
+		else
+			$remote_qcsapi registrar_report_pin $interface $2
+			echo "$remote_qcsapi get_wps_state $interface" > $qfdr_wps_state_cmd
+		fi
+	else
+		# if device is running on extender mode:
+		# if QFDR don't associate to remote AP, start WPS PIN session on master and slave.
+		# if QFDR associate to remote AP, start WPS PIN session on QFDR AP
+		local_sta_state=$($local_qcsapi get_qfdr_state wifi0)
+		remote_sta_state=$($remote_qcsapi get_qfdr_state wifi0)
+		if [ "$local_sta_state" = "1" -a "$remote_sta_state" = "1" ]; then
+			$local_qcsapi enrollee_report_pin wifi0 $2
+			$remote_qcsapi enrollee_report_pin wifi0 $2
+			echo "$0 get_dual_sta_wps_state" > $qfdr_wps_state_cmd
+		elif [ "$local_sta_state" = "0" ]; then
+			# means local radio is AP role
+			$local_qcsapi registrar_report_pin $interface $2
+			echo "$local_qcsapi get_wps_state $interface" > $qfdr_wps_state_cmd
+		elif [ "$remote_sta_state" = "0" ]; then
+			# means remote radio is AP role
+			$remote_qcsapi registrar_report_pin $interface $2
+			echo "$remote_qcsapi get_wps_state $interface" > $qfdr_wps_state_cmd
+		fi
+	fi
+}
+
+perform_get_wps_state() {
+	if [ -f $qfdr_wps_state_cmd ]; then
+		sh $qfdr_wps_state_cmd
+	else
+		echo "0 (WPS_INITIAL)"
+	fi
+}
+
+perform_get_dual_sta_wps_state() {
+	wps_state_init="0 (WPS_INITIAL)"
+	wps_state_start="1 (WPS_START)"
+	wps_state_success="2 (WPS_SUCCESS)"
+	wps_state_error="3 (WPS_ERROR)"
+	wps_state_timeout="4 (WPS_TIMEOUT)"
+	wps_state_overlap="5 (WPS_OVERLAP)"
+	local_state=$($local_qcsapi get_wps_state wifi0)
+	remote_state=$($remote_qcsapi get_wps_state wifi0)
+	if [ "$local_state" = "$wps_state_success" -o "$remote_state" = "$wps_state_success" ]; then
+		echo $wps_state_success
+	elif [ "$local_state" = "$wps_state_start" -o "$remote_state" = "$wps_state_start" ]; then
+		echo $wps_state_start
+	elif [ "$local_state" = "$wps_state_overlap" -o "$remote_state" = "$wps_state_overlap" ]; then
+		echo $wps_state_overlap
+	elif [ "$local_state" = "$wps_state_error" -o "$remote_state" = "$wps_state_error" ]; then
+		echo $wps_state_error
+	elif [ "$local_state" = "$wps_state_timeout" -o "$remote_state" = "$wps_state_timeout" ]; then
+		echo $wps_state_timeout
+	else
+		echo $wps_state_init
+	fi
+}
+
+perform_generate_pin() {
+	interface=${1:-wifi0}
+	pin=$($local_qcsapi get_wps_ap_pin $interface 1)
+	$remote_qcsapi set_wps_ap_pin $interface $pin
+	echo $pin
+}
+
+perform_set_wps_configured_state() {
+	interface=${1:-wifi0}
+	$local_qcsapi set_wps_configured_state $interface $2
+	$remote_qcsapi_qcsapi set_wps_configured_state $interface $2
+}
+
+usage_and_exit() {
+	cat <<EOF
+Usage: $0 <action> [<argument>]
+Actions:
+	report_button_press <wifiN> [hw]  : start WPS session on QFDR by pressing the (virtual) WPS Push Button
+	report_pin <wifiN> <pin>          : start WPS session on QFDR by reporting a PIN event
+	generate_ap_pin <wifiN>          : force QFDR AP to regenerate a WPS PIN
+	set_wps_configured_state <wifiN>  : set the WPS configured state
+	get_wps_state <wifiN>            : get the current QFDR WPS state
+	get_dual_sta_wps_state    : get the current QFDR WPS state if QFDR start WPS session both on master and slave in last time
+EOF
+	exit 1
+}
+
+action=$1
+shift
+case $action in
+	report_button_press)
+		perform_wps_pbc $@
+		;;
+	report_pin)
+		perform_wps_pin $@
+		;;
+	generate_ap_pin)
+		perform_generate_pin $@
+		;;
+	set_wps_configured_state)
+		perform_set_wps_configured_state $@
+		;;
+	get_wps_state)
+		perform_get_wps_state $@
+		;;
+	get_dual_sta_wps_state)
+		perform_get_dual_sta_wps_state
+		;;
+	*)
+		usage_and_exit
+		;;
+esac

@@ -1,0 +1,63 @@
+Common subdirectories: openssl-1.0.2k_org/apps and openssl-1.0.2k/apps
+Common subdirectories: openssl-1.0.2k_org/bugs and openssl-1.0.2k/bugs
+Common subdirectories: openssl-1.0.2k_org/certs and openssl-1.0.2k/certs
+diff -au openssl-1.0.2k_org/Configure openssl-1.0.2k/Configure
+--- openssl-1.0.2k_org/Configure	2017-01-26 18:52:03.000000000 +0530
++++ openssl-1.0.2k/Configure	2017-02-14 17:31:07.634185280 +0530
+@@ -1,4 +1,5 @@
+ :
++#!/usr/bin/perl
+ eval 'exec perl -S $0 ${1+"$@"}'
+     if $running_under_some_shell;
+ ##
+@@ -679,6 +680,9 @@
+ ##### Compaq Non-Stop Kernel (Tandem)
+ "tandem-c89","c89:-Ww -D__TANDEM -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1 -D_TANDEM_SOURCE -DB_ENDIAN::(unknown):::THIRTY_TWO_BIT:::",
+
++########## linux-arc ###########
++"linux-arc","gcc:-DL_ENDIAN -DTERMIO -O3 -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG:${no_asm}:dlfcn:linux-shared:-fPIC:-shared:.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
++
+ # uClinux
+ "uClinux-dist","$ENV{'CC'}:\$(CFLAGS)::-D_REENTRANT::\$(LDFLAGS) \$(LDLIBS):BN_LLONG:${no_asm}:$ENV{'LIBSSL_dlfcn'}:linux-shared:-fPIC:-shared:.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR):$ENV{'RANLIB'}::",
+ "uClinux-dist64","$ENV{'CC'}:\$(CFLAGS)::-D_REENTRANT::\$(LDFLAGS) \$(LDLIBS):SIXTY_FOUR_BIT_LONG:${no_asm}:$ENV{'LIBSSL_dlfcn'}:linux-shared:-fPIC:-shared:.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR):$ENV{'RANLIB'}::",
+Common subdirectories: openssl-1.0.2k_org/crypto and openssl-1.0.2k/crypto
+Common subdirectories: openssl-1.0.2k_org/demos and openssl-1.0.2k/demos
+Common subdirectories: openssl-1.0.2k_org/doc and openssl-1.0.2k/doc
+Common subdirectories: openssl-1.0.2k_org/engines and openssl-1.0.2k/engines
+Common subdirectories: openssl-1.0.2k_org/include and openssl-1.0.2k/include
+Common subdirectories: openssl-1.0.2k_org/MacOS and openssl-1.0.2k/MacOS
+diff -au openssl-1.0.2k_org/Makefile.org openssl-1.0.2k/Makefile.org
+--- openssl-1.0.2k_org/Makefile.org	2017-01-26 18:52:03.000000000 +0530
++++ openssl-1.0.2k/Makefile.org	2017-02-14 17:28:46.981487821 +0530
+@@ -532,7 +532,7 @@
+ 	@$(MAKE) SDIRS='$(SDIRS)' clean
+ 	@$(MAKE) TAR='$(TAR)' TARFLAGS='$(TARFLAGS)' $(DISTTARVARS) tar
+
+-install: all install_docs install_sw
++install: all install_sw
+
+ install_sw:
+ 	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
+Common subdirectories: openssl-1.0.2k_org/ms and openssl-1.0.2k/ms
+Common subdirectories: openssl-1.0.2k_org/Netware and openssl-1.0.2k/Netware
+Common subdirectories: openssl-1.0.2k_org/os2 and openssl-1.0.2k/os2
+Common subdirectories: openssl-1.0.2k_org/shlib and openssl-1.0.2k/shlib
+Common subdirectories: openssl-1.0.2k_org/ssl and openssl-1.0.2k/ssl
+Common subdirectories: openssl-1.0.2k_org/test and openssl-1.0.2k/test
+Common subdirectories: openssl-1.0.2k_org/tools and openssl-1.0.2k/tools
+Common subdirectories: openssl-1.0.2k_org/util and openssl-1.0.2k/util
+Common subdirectories: openssl-1.0.2k_org/VMS and openssl-1.0.2k/VMS
+diff -au openssl-1.0.2k_org/ssl/t1_lib.c openssl-1.0.2k/ssl/t1_lib.c
+--- openssl-1.0.2k_org/ssl/t1_lib.c	2017-01-26 18:52:04.000000000 +0530
++++ openssl-1.0.2k/ssl/t1_lib.c	2017-02-14 17:29:21.613659553 +0530
+@@ -3115,10 +3115,6 @@
+         ssl3_send_alert(s, SSL3_AL_FATAL, al);
+         return -1;
+
+-    case SSL_TLSEXT_ERR_ALERT_WARNING:
+-        ssl3_send_alert(s, SSL3_AL_WARNING, al);
+-        return 1;
+-
+     case SSL_TLSEXT_ERR_NOACK:
+         s->servername_done = 0;
+     default:

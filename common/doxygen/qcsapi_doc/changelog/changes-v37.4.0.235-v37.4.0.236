@@ -1,0 +1,11 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_235_TO_v37_4_0_236 Version v37.4.0.235 to version v37.4.0.236 changes
+ *
+ * \subsection v37_4_0_235_TO_v37_4_0_236Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.235 and v37.4.0.236
+ * \li \ref qcsapi_wifi_start_phy_scan
+ */
+

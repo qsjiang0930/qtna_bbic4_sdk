@@ -1,0 +1,12 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_192_TO_v37_4_0_193 Version v37.4.0.192 to version v37.4.0.193 changes
+ *
+ * \subsection v37_4_0_192_TO_v37_4_0_193Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.192 and v37.4.0.193
+ * \li \ref qcsapi_wifi_set_channel_and_bw
+ * \li \ref qcsapi_wifi_get_channel_and_bw
+ */
+

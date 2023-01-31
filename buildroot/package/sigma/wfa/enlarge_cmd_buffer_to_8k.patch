@@ -1,0 +1,98 @@
+diff -urN Sigma_Sample_DUT_Code-Linux_v8.1.1.orig/ca/wfa_ca.c Sigma_Sample_DUT_Code-Linux_v8.1.1/ca/wfa_ca.c
+--- Sigma_Sample_DUT_Code-Linux_v8.1.1.orig/ca/wfa_ca.c	2019-05-30 05:15:09.448312037 +0000
++++ Sigma_Sample_DUT_Code-Linux_v8.1.1/ca/wfa_ca.c	2019-05-30 05:22:30.532311063 +0000
+@@ -79,9 +79,9 @@
+     WORD tag;
+     int tmsockfd, cmdLen = WFA_BUFF_1K;
+     int maxfdn1;
+-    BYTE xcCmdBuf[WFA_BUFF_4K];
++    BYTE xcCmdBuf[WFA_BUFF_8K];
+     BYTE caCmdBuf[WFA_BUFF_4K];
+-    BYTE pcmdBuf[WFA_BUFF_1K];
++    BYTE pcmdBuf[WFA_BUFF_8K];
+     char *pcmdStr = NULL;
+     char respStr[WFA_BUFF_512];
+     int use_external_handlers = 0;
+@@ -221,7 +221,7 @@
+    
+         if(gCaSockfd > 0 && FD_ISSET(gCaSockfd, &sockSet))
+         {
+-            memset(xcCmdBuf, 0, WFA_BUFF_4K);
++            memset(xcCmdBuf, 0, WFA_BUFF_8K);
+             memset(gRespStr, 0, WFA_BUFF_512);
+ 
+             nbytes = wfaCtrlRecv(gCaSockfd, xcCmdBuf); 
+@@ -359,7 +359,7 @@
+                 continue;
+             }
+ 
+-            memset(pcmdBuf, 0, WFA_BUFF_1K); 
++            memset(pcmdBuf, 0, WFA_BUFF_8K);
+ 	    int handle_result = use_external_handlers
+ 	    	? qtn_capi_to_tlv[i].cmdProcFunc(pcmdStr, pcmdBuf, &cmdLen)
+ 	    	: nameStr[i].cmdProcFunc(pcmdStr, pcmdBuf, &cmdLen);
+diff -urN Sigma_Sample_DUT_Code-Linux_v8.1.1.orig/dut/wfa_dut.c Sigma_Sample_DUT_Code-Linux_v8.1.1/dut/wfa_dut.c
+--- Sigma_Sample_DUT_Code-Linux_v8.1.1.orig/dut/wfa_dut.c	2019-05-30 05:15:09.448312037 +0000
++++ Sigma_Sample_DUT_Code-Linux_v8.1.1/dut/wfa_dut.c	2019-05-30 05:22:30.532311063 +0000
+@@ -279,7 +279,7 @@
+         /* Control Link port event*/
+         if(gxcSockfd >= 0 && FD_ISSET(gxcSockfd, &sockSet)) 
+         {
+-            memset(xcCmdBuf, 0, WFA_BUFF_1K);  /* reset the buffer */
++            memset(xcCmdBuf, 0, WFA_BUFF_8K);  /* reset the buffer */
+             nbytes = wfaCtrlRecv(gxcSockfd, xcCmdBuf);
+ 
+             if(nbytes <=0)
+diff -urN Sigma_Sample_DUT_Code-Linux_v8.1.1.orig/dut/wfa_dut_init.c Sigma_Sample_DUT_Code-Linux_v8.1.1/dut/wfa_dut_init.c
+--- Sigma_Sample_DUT_Code-Linux_v8.1.1.orig/dut/wfa_dut_init.c	2014-08-04 21:12:14.000000000 +0000
++++ Sigma_Sample_DUT_Code-Linux_v8.1.1/dut/wfa_dut_init.c	2019-05-30 05:22:30.532311063 +0000
+@@ -87,7 +87,7 @@
+     }
+ 
+     /* control command buf */
+-    *cBuf = malloc(WFA_BUFF_1K);
++    *cBuf = malloc(WFA_BUFF_8K);
+     if(*cBuf == NULL)
+     {
+         DPRINT_ERR(WFA_ERR, "Failed to malloc control command buf\n");
+diff -urN Sigma_Sample_DUT_Code-Linux_v8.1.1.orig/inc/wfa_main.h Sigma_Sample_DUT_Code-Linux_v8.1.1/inc/wfa_main.h
+--- Sigma_Sample_DUT_Code-Linux_v8.1.1.orig/inc/wfa_main.h	2014-08-04 21:12:14.000000000 +0000
++++ Sigma_Sample_DUT_Code-Linux_v8.1.1/inc/wfa_main.h	2019-05-30 05:22:30.532311063 +0000
+@@ -33,7 +33,7 @@
+ #endif
+ 
+ #define MAX_CMD_BUFF        1024 
+-#define MAX_PARMS_BUFF      640 
++#define MAX_PARMS_BUFF      (1024 * 4) 
+ 
+ #define MAX_TRAFFIC_BUF_SZ  1536
+ 
+@@ -43,6 +43,7 @@
+ #define WFA_BUFF_512        512
+ #define WFA_BUFF_1K         1024
+ #define WFA_BUFF_4K         4096
++#define WFA_BUFF_8K         (1024 * 8)
+ 
+ #ifdef WFA_PC_CONSOLE
+ #define WFA_RESP_BUF_SZ    WFA_BUFF_4K
+diff -urN Sigma_Sample_DUT_Code-Linux_v8.1.1.orig/lib/wfa_sock.c Sigma_Sample_DUT_Code-Linux_v8.1.1/lib/wfa_sock.c
+--- Sigma_Sample_DUT_Code-Linux_v8.1.1.orig/lib/wfa_sock.c	2014-08-04 21:12:15.000000000 +0000
++++ Sigma_Sample_DUT_Code-Linux_v8.1.1/lib/wfa_sock.c	2019-05-30 05:22:30.532311063 +0000
+@@ -66,7 +66,7 @@
+         DPRINT_ERR(WFA_ERR, "createTCPServSock socket() failed");
+         return WFA_FAILURE;
+     }
+-      
++
+     /* Construct local address structure */
+     wMEMSET(&servAddr, 0, sizeof(servAddr));
+     wfaGetifAddr(gnetIf, &servAddr);
+@@ -281,7 +281,7 @@
+ {
+    int bytesRecvd = 0;
+ 
+-   bytesRecvd = wRECV(sock, buf, WFA_BUFF_1K-1, 0);
++   bytesRecvd = wRECV(sock, buf, WFA_BUFF_8K - 1, 0);
+ 
+    return bytesRecvd; 
+ }

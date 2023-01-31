@@ -1,0 +1,81 @@
+#!/bin/sh
+
+. /scripts/helpers.sh
+
+show_usage()
+{
+	echo "Usage:"
+	echo "    $(basename $0) {disable | enable | show}"
+	echo "    $(basename $0) add -m <mac address>"
+}
+
+add_mac()
+{
+	local mac=$1
+
+	if [ -z "$mac" ]
+	then
+		show_usage
+		return 1
+	fi
+
+	if ! check_mac $mac
+	then
+		echo "Invalid MAC address format"
+		return 1
+	fi
+
+	local mac_in_list=`grep $mac $allow_file`
+	if [ -z $mac_in_list ]
+	then
+		echo $mac >> $allow_file
+	else
+		echo "MAC address $mac already in list"
+	fi
+}
+
+security_path=`call_qcsapi get_file_path security`
+allow_file="$security_path/qrpcd.mac.allow"
+cmd=$1
+opt=$2
+
+case "$cmd" in
+disable)
+	rm -f $allow_file > /dev/null
+	;;
+
+enable)
+	touch $allow_file
+	;;
+
+show)
+	if [ -f $allow_file ]
+	then
+		echo "Enabled"
+		echo "Allowed MAC addresses:"
+		cat $allow_file
+	else
+		echo "Disabled"
+	fi
+	;;
+
+add)
+	case "$opt" in
+	-m)
+		add_mac $3
+		;;
+
+	*)
+		show_usage
+		return 1
+		;;
+	esac
+	;;
+
+*)
+	show_usage
+	return 1
+	;;
+esac
+
+exit 0

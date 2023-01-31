@@ -1,0 +1,17 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_185_TO_v37_4_0_186 Version v37.4.0.185 to version v37.4.0.186 changes
+ *
+ * \subsection v37_4_0_185_TO_v37_4_0_186Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.185 and v37.4.0.186
+ * \li \ref qcsapi_wifi_set_nac_mon_mode_abs
+ * \li \ref qcsapi_wifi_get_nac_mon_mode_abs
+ * \li \ref qcsapi_wifi_set_mgmt_power_backoff
+ * \li \ref qcsapi_wifi_set_beacon_power_backoff
+ * \li \ref qcsapi_wifi_get_mgmt_power_backoff
+ * \li \ref qcsapi_wifi_set_scs_nac_monitor_mode_abs
+ * \li \ref qcsapi_wifi_get_beacon_power_backoff
+ */
+

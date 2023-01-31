@@ -1,0 +1,9 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+
+. $base_scripts/start-helpers.sh
+
+generate_qfdr_env
+start_nc_server
+free_qfdr_memory

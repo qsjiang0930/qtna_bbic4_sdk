@@ -1,0 +1,137 @@
+#!/bin/sh
+#
+# Scripts to start on a Network Processor board
+#
+
+base_scripts="/scripts"
+
+. $base_scripts/start-helpers.sh
+
+mode_file="/tmp/qfdr_running_mode"
+
+switch_low_gpio=12
+switch_high_gpio=13
+
+ap_led_gpio=1
+extender_led_gpio=16
+
+ap="01"
+auto="10"
+extender="11"
+
+eth_port="eth1_0"
+
+read_gpio_value()
+{
+	gpio_sysctl_path=/sys/devices/virtual/gpio/gpio$1
+
+	if [ ! -e $gpio_sysctl_path ] ; then
+		echo $1 > /sys/class/gpio/export
+	fi
+
+	if [ -e $gpio_sysctl_path ] ; then
+		echo in > $gpio_sysctl_path/direction
+		cat $gpio_sysctl_path/value
+	else
+		echo "Fail to exporting gpio \"$1\""
+	fi
+}
+
+set_led()
+{
+	if [ "$1" = ap ]; then
+		call_qcsapi -q set_led $ap_led_gpio 1
+		call_qcsapi -q set_led $extender_led_gpio 0
+	else
+		call_qcsapi -q set_led $ap_led_gpio 0
+		call_qcsapi -q set_led $extender_led_gpio 1
+	fi
+}
+
+set_mode()
+{
+	echo $1 > $mode_file
+	set_led $1
+}
+
+detect_qfdr_mode_by_dhcp() {
+	auto_detect_wait=`get_bootval auto_detect_wait`
+	if [ "$auto_detect_wait" = "0" ]; then
+		auto_detect_wait=10
+	fi
+	dhcp_response=0
+	count=0
+
+	echo "=== Detecting DHCP server for $auto_detect_wait seconds"
+	rm -f /var/lib/dhcp/query_output
+	dhclient -4 -o $eth_port &
+	while [ $count -lt $auto_detect_wait ]
+	do
+		if [ $((count%2)) = 0 ]; then
+			set_led "ap"
+		else
+			set_led "extender"
+		fi
+		sleep 1
+		count=$((count+1))
+		if [ -f /var/lib/dhcp/query_output ]; then
+			dhcp_response=1
+			break
+		fi
+	done
+
+	if [ $dhcp_response = 0 ]; then
+		echo "=== Don't find DHCP server, run device in Extender mode"
+		set_mode "extender"
+		killall dhclient
+	else
+		echo "=== Find DHCP server, run device in AP mode"
+		set_mode "ap"
+	fi
+	rm -f /var/lib/dhcp/dhclient.leases
+	rm -f /var/lib/dhcp/dhclient.pid
+}
+
+preset_mode=$(call_qcsapi get_qfdr_param mode)
+if [ "$preset_mode" = "ap" ]; then
+	echo "=== Preset mode is ap, run device in AP mode"
+	set_mode "ap"
+	exit 0
+elif [ "$preset_mode" = "extender" ]; then
+	echo "=== Preset mode is extender, run device in Extender mode"
+	set_mode "extender"
+	exit 0
+elif [ "$preset_mode" = "auto" ]; then
+	echo "=== Preset mode is auto"
+	detect_qfdr_mode_by_dhcp
+	exit 0
+elif [ "$preset_mode" = "by3wayswitch" ]; then
+	echo "=== Preset mode is by3wayswitch"
+	if [ "$(get_bootval no_qfdr_3way_switch)" = "1" ]; then
+		echo "=== 3 way switch does not exist, treat as auto mode"
+		detect_qfdr_mode_by_dhcp
+		exit 0
+	fi
+	# goto determine qfdr mode by 3 way switch
+else
+	echo "=== Warning: Preset mode is invalid: $preset_mode, treat as auto mode"
+	detect_qfdr_mode_by_dhcp
+	exit 0
+fi
+
+# determine qfdr mode by 3 way switch
+state=$(read_gpio_value $switch_low_gpio)$(read_gpio_value $switch_high_gpio)
+
+if [ "$state" = "$ap" ]; then
+	echo "=== 3 way switch is set to AP mode, run device in AP mode"
+	set_mode "ap"
+elif [ "$state" = "$extender" ]; then
+	echo "=== 3 way switch is set to Extender mode, run device in Extender mode"
+	set_mode "extender"
+elif [ "$state" = "$auto" ]; then
+	echo "=== 3 way switch is set to Auto mode"
+	detect_qfdr_mode_by_dhcp
+else
+	echo "=== Warning: the gpio state of the 3 way switch is invalid: $state, treat as auto mode"
+	detect_qfdr_mode_by_dhcp
+fi

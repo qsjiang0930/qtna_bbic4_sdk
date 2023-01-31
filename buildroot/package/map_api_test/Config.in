@@ -1,0 +1,5 @@
+config BR2_PACKAGE_MAP_API_TEST
+        bool "map_api_test"
+        default n
+        help
+          Tool used for MAP api testing.

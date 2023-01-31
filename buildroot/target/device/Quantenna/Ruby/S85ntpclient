@@ -1,0 +1,52 @@
+#!/bin/sh
+
+# This script is to start and stop NTP client.
+
+search_pid() {
+	pattern=$1
+	echo $(ps | grep "$pattern" | grep -v "grep " | awk '{print $1}')
+}
+
+kill_process() {
+	pid=$(search_pid "$1")
+	if [ -n "$pid" ]; then
+		kill $pid
+	fi
+}
+
+start() {
+	export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/scripts:/usr/local/bin
+	export LD_LIBRARY_PATH=/lib:/usr/lib
+
+	ntpcli=$(get_wifi_config global ntpclient)
+	if [ "$ntpcli" = "1" ]; then
+		if [ -z "$(search_pid start-ntpclient)" ]; then
+			/scripts/start-ntpclient &
+		fi
+		echo "NTP client enabled"
+	fi
+}
+
+stop() {
+	echo "Stopping NTP client"
+	kill_process start-ntpclient
+	killall -q ntpclient
+}
+
+case "$1" in
+start)
+	start
+	;;
+stop)
+	stop
+	;;
+restart|reload)
+	stop
+	start
+	;;
+*)
+	echo $"Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?

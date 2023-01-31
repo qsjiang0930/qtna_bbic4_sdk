@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>AwesomeChartJS demo</title>
+    </head>
+    <link href="css/dashboard.css" rel="stylesheet">
+
+    <link href="css/animate.css" rel="stylesheet">
+
+    <script src="js/jquery-1.11.0.js"></script>
+
+    <script src="js/common.js"></script>
+
+    <body style="background: #f5f5f5;">
+        <div id="csmd" class="animated fadeInDown soniq_index">
+            <h1>SONIC is not enabled!</h1>
+        </div>
+    </body>
+<script language="JavaScript" type="text/JavaScript">
+$(document).ready(function()
+{
+    $.ajax(
+    {
+        type        : 'GET',
+        url         : 'server/soniq.php',
+        dataType    : 'json',
+        timeout     : ajax_timeout,
+        data        : {action:"get_csmd_info"},
+        success     : function(json)
+        {
+            if(json.result != "")
+            {
+                window.location.href="login.html";
+            }
+            else
+            {
+                document.getElementById("csmd").style.display = "block";
+            }
+        },
+        error       : function()
+        {
+            alert("Ajax Failed");
+        }
+    });
+});
+</script>
+</html>
+

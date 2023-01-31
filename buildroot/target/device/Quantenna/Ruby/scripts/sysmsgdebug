@@ -1,0 +1,25 @@
+#!/bin/sh
+
+cmd=$1
+
+if [ -z $cmd ]; then
+	cmd="on"
+fi
+
+if [ ! -f /var/run/syslogd.pid ]; then
+	echo "syslogd is not running."
+	return 1
+fi
+
+case $cmd in
+"on")
+	echo "pktlogger 0 start sysmsg" > /sys/devices/qdrv/control
+	;;
+"off")
+	echo "pktlogger 0 stop sysmsg" > /sys/devices/qdrv/control
+	;;
+*)
+	echo "Usage: $0 [ on | off ]"
+	return 1
+	;;
+esac

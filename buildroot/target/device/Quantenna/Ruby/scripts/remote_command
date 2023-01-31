@@ -1,0 +1,36 @@
+#!/bin/sh
+
+if [ $# -lt 1 ]; then
+	exit 0
+fi
+
+do_update_regulatory_db()
+{
+	if [ $# -lt 1 ]; then
+		db_file=/etc/qtn_regulatory_db.bin
+	elif [ -f $1 ]; then
+		db_file=$1
+	else
+		echo "$1 not found."
+		exit 1
+	fi
+
+	if [ "${db_file##*/}" != "qtn_regulatory_db.bin" ]; then
+		echo "invalid file $db_file"
+		exit 1
+	fi
+
+	update_bootcfg_file $db_file
+}
+
+case "$1" in
+	reboot)
+		reboot
+		;;
+	update_db)
+		shift
+		do_update_regulatory_db $*
+		;;
+	*):
+		exit 1
+esac

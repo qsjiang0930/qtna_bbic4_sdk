@@ -1,0 +1,49 @@
+Common subdirectories: openssl-1.0.2f_org/apps and openssl-1.0.2f/apps
+Common subdirectories: openssl-1.0.2f_org/bugs and openssl-1.0.2f/bugs
+Common subdirectories: openssl-1.0.2f_org/certs and openssl-1.0.2f/certs
+diff -au openssl-1.0.2f_org/Configure openssl-1.0.2f/Configure
+--- openssl-1.0.2f_org/Configure	2016-02-02 14:49:06.854751404 +1100
++++ openssl-1.0.2f/Configure	2016-02-02 15:20:01.814584745 +1100
+@@ -1,4 +1,4 @@
+-:
++#!/usr/bin/perl
+ eval 'exec perl -S $0 ${1+"$@"}'
+     if $running_under_some_shell;
+ ##
+@@ -673,6 +673,9 @@
+ ##### Compaq Non-Stop Kernel (Tandem)
+ "tandem-c89","c89:-Ww -D__TANDEM -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1 -D_TANDEM_SOURCE -DB_ENDIAN::(unknown):::THIRTY_TWO_BIT:::",
+ 
++########## Linux-arc ###########
++"linux-arc","gcc:-DL_ENDIAN -DTERMIO -O3 -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG:${no_asm}:dlfcn:linux-shared:-fPIC:-shared:.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
++
+ # uClinux
+ "uClinux-dist","$ENV{'CC'}:\$(CFLAGS)::-D_REENTRANT::\$(LDFLAGS) \$(LDLIBS):BN_LLONG:${no_asm}:$ENV{'LIBSSL_dlfcn'}:linux-shared:-fPIC:-shared:.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR):$ENV{'RANLIB'}::",
+ "uClinux-dist64","$ENV{'CC'}:\$(CFLAGS)::-D_REENTRANT::\$(LDFLAGS) \$(LDLIBS):SIXTY_FOUR_BIT_LONG:${no_asm}:$ENV{'LIBSSL_dlfcn'}:linux-shared:-fPIC:-shared:.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR):$ENV{'RANLIB'}::",
+Common subdirectories: openssl-1.0.2f_org/crypto and openssl-1.0.2f/crypto
+Common subdirectories: openssl-1.0.2f_org/demos and openssl-1.0.2f/demos
+Common subdirectories: openssl-1.0.2f_org/doc and openssl-1.0.2f/doc
+Common subdirectories: openssl-1.0.2f_org/engines and openssl-1.0.2f/engines
+Common subdirectories: openssl-1.0.2f_org/include and openssl-1.0.2f/include
+Common subdirectories: openssl-1.0.2f_org/MacOS and openssl-1.0.2f/MacOS
+diff -au openssl-1.0.2f_org/Makefile openssl-1.0.2f/Makefile
+--- openssl-1.0.2f_org/Makefile	2016-02-02 14:49:06.854751404 +1100
++++ openssl-1.0.2f/Makefile	2016-02-02 15:20:27.594741227 +1100
+@@ -530,7 +530,7 @@
+ 	@$(MAKE) SDIRS='$(SDIRS)' clean
+ 	@$(MAKE) TAR='$(TAR)' TARFLAGS='$(TARFLAGS)' $(DISTTARVARS) tar
+ 
+-install: all install_docs install_sw
++install: all install_sw
+ 
+ install_sw:
+ 	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
+Common subdirectories: openssl-1.0.2f_org/ms and openssl-1.0.2f/ms
+Common subdirectories: openssl-1.0.2f_org/Netware and openssl-1.0.2f/Netware
+Common subdirectories: openssl-1.0.2f_org/os2 and openssl-1.0.2f/os2
+Common subdirectories: openssl-1.0.2f_org/shlib and openssl-1.0.2f/shlib
+Common subdirectories: openssl-1.0.2f_org/ssl and openssl-1.0.2f/ssl
+Common subdirectories: openssl-1.0.2f_org/test and openssl-1.0.2f/test
+Common subdirectories: openssl-1.0.2f_org/tools and openssl-1.0.2f/tools
+Common subdirectories: openssl-1.0.2f_org/util and openssl-1.0.2f/util
+Common subdirectories: openssl-1.0.2f_org/VMS and openssl-1.0.2f/VMS

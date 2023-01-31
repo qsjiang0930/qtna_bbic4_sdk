@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# This shell script is used to set QTN global environment variable to /tmp/qtn_env_file
+# Usage: set_qtnenv env_name env_value
+# Any script can import these environment variables using sentence ". import_qtnenv"
+
+qtn_env_file=/tmp/qtn_env_file
+
+if [ $# != 2 ]; then
+	return
+fi
+
+env=$1
+val=$2
+
+sed -i "/^$env=/d" $qtn_env_file 2> /dev/null
+echo "$env=\"$val\"" >> $qtn_env_file

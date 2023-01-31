@@ -1,0 +1,110 @@
+default_ipaddr=192.168.1.100
+default_netmask=255.255.255.0
+
+configure_ap_network()
+{
+	if [ -f /mnt/jffs2/apipaddr ]
+	then
+		ipaddr=`cat /mnt/jffs2/apipaddr`
+	fi
+
+	if [ -f /mnt/jffs2/apnetmask ]
+	then
+		netmask=`cat /mnt/jffs2/apnetmask`
+	fi
+
+	if [ -z $ipaddr ]
+	then
+		ipaddr=$default_ipaddr
+	fi
+
+	if [ -z $netmask ]
+	then
+		netmask=$default_netmask
+	fi
+
+	echo "ip address: $ipaddr"
+	echo "netmask: $netmask"
+
+	ifconfig br0 $ipaddr netmask $netmask
+}
+
+ip2int()
+{
+	echo $1 | {
+		IFS=.
+		read a b c d
+		echo $(((((((a << 8) | b) << 8) | c) << 8) | d))
+	}
+}
+
+int2ip()
+{
+	local ui32=$1; shift
+	local ip n
+	for n in 1 2 3 4; do
+		ip=$((ui32 & 0xff))${ip:+.}$ip
+		ui32=$((ui32 >> 8))
+	done
+	echo $ip
+}
+
+network_ip()
+{
+	local ip_int
+	local mask_int
+
+	ip_int=`ip2int $1`
+	mask_int=`ip2int $2`
+	int2ip $((ip_int & mask_int))
+}
+
+increment_ip()
+{
+	local ip_int
+
+	ip_int=`ip2int $1`
+	int2ip $((ip_int + 1))
+}
+
+start_dhcp_server()
+{
+	local dhcp_conf
+
+	dhcp_conf=/etc/dhcpd.conf
+
+	if [ ! -f $dhcp_conf ]
+	then
+		local network_ip
+		local remote_ipaddr
+
+		network_ip=`network_ip $ipaddr $netmask`
+		remote_ipaddr=`increment_ip $ipaddr`
+
+		cat > $dhcp_conf << EOL
+subnet $network_ip netmask $netmask {
+	range $remote_ipaddr $remote_ipaddr;
+}
+EOL
+	fi
+
+	test -d /var/lib/dhcp/ || mkdir -p /var/lib/dhcp/
+	test -f /var/lib/dhcp/dhcpd.leases || touch /var/lib/dhcp/dhcpd.leases
+	/usr/sbin/dhcpd -cf $dhcp_conf br0&
+}
+
+
+killall -q dhclient
+wpa_cli scan_interval 0xFFFFFFFF
+call_qcsapi -u cancel_scan wifi0
+
+echo "Configuring AP network ..."
+configure_ap_network
+
+if [ -f /usr/sbin/dhcpd ]
+then
+	echo "Starting DHCP server..."
+	start_dhcp_server
+fi
+
+call_qcsapi -u enable_interface wifi1 1

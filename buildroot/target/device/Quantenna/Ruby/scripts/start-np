@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# Scripts to start on a Network Processor board
+#
+
+base_scripts="/scripts"
+
+. $base_scripts/start-helpers.sh
+
+ifconfig br0:1 $(get_rc_init_ipaddr)
+brctl ssdp_flood br0 on
+
+# monitor the Reset Device push button
+# GPIO pin is 5, active low
+monitor_reset_device 5 0 &
+
+# RF kill is GPIO 12 - high is "RF enabled", low is "RF kill"
+monitor_rfenable 12 1 &
+
+#start http server
+if [ ! -f /mnt/jffs2/minihttpd.conf ] ; then
+	cp -f /etc/minihttpd.conf /mnt/jffs2/minihttpd.conf
+fi
+
+if [ ! -f /mnt/jffs2/admin.conf ] ; then
+	cp -f /etc/admin.conf /mnt/jffs2/admin.conf
+fi
+
+if [ -f /sbin/mini_httpd ] ; then
+	/sbin/mini_httpd -u root -C /mnt/jffs2/minihttpd.conf
+fi
+
+start-stateless-slave &

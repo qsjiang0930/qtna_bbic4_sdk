@@ -1,0 +1,6 @@
+config BR2_PACKAGE_LIBINIH
+	bool "libinih"
+	default n
+	help
+	 Simple .INI file parser in C, good for embedded systems
+	 https://github.com/benhoyt/inih

@@ -1,0 +1,185 @@
+#! /bin/sh
+#
+# Description
+#   Restore the default wireless_conf.txt file
+#
+# Usage
+#   restore_wireless_config [{ap | sta}]
+#
+# Note
+#   Calling this script without any arguments will restore the platform specific default configuration
+#
+base_scripts="/scripts"
+base_default_conf_files="/etc"
+base_persistent_conf_files="/mnt/jffs2"
+
+default_wireless_conf_file="$base_default_conf_files/default_config.txt"
+persist_wireless_conf_file="$base_persistent_conf_files/wireless_conf.txt"
+
+. $base_scripts/start-helpers.sh
+. $default_wireless_conf_file
+
+procname=$(basename $0)
+
+usage_string="Usage: $procname [{sta | ap | repeater}]"
+
+wifi_device="wifi0"
+wifi_mode="default"
+feat_list_available=0
+feat_list_support_ap=0
+feat_list_support_sta=0
+feat_list_support_repeater=0
+generic_board_conf=1
+
+get_wifi_modes_supported_from_feat_list()
+{
+	feat_list=`call_qcsapi -u get_swfeat_list`
+
+	if [ $? -eq 0 ]; then
+		feat_list_available=1
+		if echo "$feat_list" | grep -q "Access Point"; then
+			feat_list_support_ap=1
+		fi
+		if echo "$feat_list" | grep -q "Non-AP station"; then
+			feat_list_support_sta=1
+		fi
+		if echo "$feat_list" | grep -q "Repeater"; then
+			feat_list_support_repeater=1
+		fi
+	fi
+}
+
+# Create new wireless_conf.txt file with default settings
+create_wireless_conf_file()
+{
+	get_wifi_modes_supported_from_feat_list
+
+	if [ $feat_list_available = 1 ]; then
+		if [ "$wifi_mode" = "ap" ]; then
+			if [ $feat_list_support_ap != 1 ]; then
+				echo_with_logging "$procname: ERROR: mode '$wifi_mode' is not supported"
+				return 1
+			fi
+			wifi0_mode='ap'
+		elif [ "$wifi_mode" = "sta" ]; then
+			if [ $feat_list_support_sta != 1 ]; then
+				echo_with_logging "$procname: ERROR: mode '$wifi_mode' is not supported"
+				return 1
+			fi
+			wifi0_mode='sta'
+		elif [ "$wifi_mode" = "repeater" ]; then
+			if [ $feat_list_support_repeater != 1 ]; then
+				echo_with_logging "$procname: ERROR: mode '$wifi_mode' is not supported"
+				return 1
+			fi
+			wifi0_mode='repeater'
+		elif [ "$wifi_mode" = "default" ]; then
+			if [ $feat_list_support_ap = 1 ]; then
+				wifi0_mode='ap'
+				elif [ $feat_list_support_sta = 1 ]; then
+				wifi0_mode='sta'
+			else
+				echo_with_logging "$procname: ERROR: 'ap' and 'sta' features not supported, " \
+					"but using STA mode"
+				wifi0_mode='sta'
+			fi
+		else
+			echo_with_logging "$procname: ERROR: Invalid argument"
+			return 1
+		fi
+	fi
+
+	echo_with_logging "$procname: Setting default wireless config params"
+
+	board_id=`call_qcsapi -u get_board_parameter board_id`
+	if [ $? -eq 0 ]; then
+		echo_with_logging "$procname: board_id = $board_id"
+		if [ $board_id = 1215 ] || [ $board_id = 1217 ]; then
+			generic_board_conf=0
+			echo_with_logging "$procname: Override some default configs defined in " \
+				"$default_wireless_conf_file"
+			wifi0_bw=40
+			wifi0_staticip=1
+			wifi0_scs=
+			wifi0_vht=
+			wifi0_vht_24g=
+			wifi0_band=
+			wifi0_pmf=
+			wifi0_qtm=
+			wifi0_pwr=16
+			wifi0_pwr_cal='on'
+			wifi0_leds=1
+			wifi0_monitorreset=1
+			wifi0_monitorrfenable=1
+		fi
+	fi
+
+	if [ $generic_board_conf = 1 ]; then
+		board_name=`call_qcsapi -u get_board_parameter name`
+		if [ $? -eq 0 ]; then
+			echo_with_logging "$procname: board_name = $board_name"
+			if is_platform_def_mode_station $board_name; then
+				echo_with_logging "$procname: Override some default configs defined in " \
+					"$default_wireless_conf_file"
+				if [ "$wifi_mode" = "ap" ]; then
+					echo_with_logging "$procname: Ignoring the input param 'ap', setting the default to 'sta'"
+				fi
+				wifi0_mode='sta'
+				wifi0_bw=0
+				wifi0_staticip=1
+				wifi0_scs=0
+				wifi0_region_dyn=1
+			fi
+
+                        if is_platform_dual_band $board_name; then
+				wifi0_pwr_2g=19
+				max_pwr_bootval=`get_bootval max_tx_power_2g`
+				if [ $max_pwr_bootval -gt 0 ] && [ $max_pwr_bootval -lt $wifi0_pwr_2g ]; then
+					wifi0_pwr_2g=$max_pwr_bootval
+				fi
+			fi
+			if is_platform_bf_disable_in_default_config $board_name; then
+				wifi0_bf=0
+			fi
+		fi
+	fi
+
+	max_pwr_bootval=`get_bootval max_tx_power`
+	if [ $max_pwr_bootval -gt 0 ] && [ $max_pwr_bootval -lt $wifi0_pwr ]; then
+		wifi0_pwr=$max_pwr_bootval
+	fi
+
+	rm -f $persist_wireless_conf_file
+	echo_with_logging "$procname: Writing config params to $persist_wireless_conf_file"
+
+	for param in $g_wifi_config_param_list
+	do
+		param_variable=wifi0_${param}
+		param_value=`eval echo -n $"$param_variable"`
+		if [ -n "$param_value" ]; then
+			cmd="$cmd$param=$param_value&"
+		fi
+	done
+
+	echo $cmd > $persist_wireless_conf_file
+
+	return 0
+}
+
+echo_with_logging "$procname $@"
+
+while [ "$1" != "" ]; do
+	case "$1" in
+	ap|sta |repeater) wifi_mode=$1
+		;;
+	*)	echo $usage_string
+		exit 1
+		;;
+	esac
+	shift
+done
+
+echo_with_logging "$procname: wifi_mode = $wifi_mode"
+
+create_wireless_conf_file
+

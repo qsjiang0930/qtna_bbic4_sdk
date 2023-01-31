@@ -1,0 +1,5 @@
+config BR2_PACKAGE_QTM
+	bool "Quantenna Traffic Management"
+	default n
+	help
+	  Quantenna Traffic Management

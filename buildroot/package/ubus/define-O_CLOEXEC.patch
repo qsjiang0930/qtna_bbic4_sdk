@@ -1,0 +1,16 @@
+diff --git a/libubus-io.c b/libubus-io.c
+index daa7106..7428e42 100644
+--- a/libubus-io.c
++++ b/libubus-io.c
+@@ -20,6 +20,11 @@
+ #include <fcntl.h>
+ #include <poll.h>
+
++/* extract from uclibc/arc-linux-uclibc/include/asm-generic/fcntl.h */
++#ifndef O_CLOEXEC
++#define O_CLOEXEC 02000000
++#endif
++
+ #include <libubox/usock.h>
+ #include <libubox/blob.h>
+ #include <libubox/blobmsg.h>

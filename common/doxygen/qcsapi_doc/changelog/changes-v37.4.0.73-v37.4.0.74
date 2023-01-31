@@ -1,0 +1,17 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_73_TO_v37_4_0_74 Version v37.4.0.73 to version v37.4.0.74 changes
+ *
+ * \subsection v37_4_0_73_TO_v37_4_0_74Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.73 and v37.4.0.74
+ * \li \ref qcsapi_wds_set_psk
+ *
+ * \subsection v37_4_0_73_TO_v37_4_0_74Removed Removed functions
+ *
+ * The following functions were removed between versions v37.4.0.73 and v37.4.0.74
+ * \li \ref qcsapi_wifi_wds_set_psk
+ * \li \ref qcsapi_wifi_wds_get_psk
+ */
+

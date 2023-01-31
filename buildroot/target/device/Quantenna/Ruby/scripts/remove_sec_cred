@@ -1,0 +1,441 @@
+#! /bin/sh
+
+# Remove sensetive data from hostapd and wpa_supplicant configuration files
+
+config_file=$1
+
+if [ $# -lt 1 ]
+then
+	echo "$0 requires a file path"
+	exit 1
+fi
+
+# List of all parameters generated from hostapd.conf and wpa_supplicant.conf examples.
+# For generate fresh version of this list use ./tools/gen_sec_params.sh
+
+# parameter=value list where value is one of:
+#    0 - do not preserve parameter value
+#    1 - preserve parameter value
+# If parameter is not in the list script should not preserve parameter value
+
+PARAM_LIST=$(cat <<'EOF'
+accept_mac_file=1
+access_network_type=1
+acct_server_addr=1
+acct_server_port=1
+acct_server_shared_secret=1
+acs_num_scans=1
+aifs=0
+allow_cross_connection=1
+altsubject_match=0
+altsubject_match2=0
+anonymous_identity=0
+anqp_3gpp_cell_net=1
+anqp_domain_id=1
+ap_isolate=1
+ap_max_inactivity=1
+ap_pin=0
+ap_scan=1
+ap_settings=1
+ap_setup_locked=1
+ap_table_expiration_time=1
+ap_table_max_size=1
+asra=1
+assoc_sa_query_max_timeout=1
+assoc_sa_query_retry_timeout=1
+auth_alg=1
+auth_algs=1
+auth_server_addr=1
+auth_server_port=1
+auth_server_shared_secret=0
+basic_rates=1
+beacon_int=1
+bridge=1
+bss=1
+bssid=1
+bss_load_test=1
+bss_max_count=1
+bss_transition=1
+ca_cert=0
+ca_cert2=0
+ca_path=0
+ca_path2=0
+cert=0
+channel=1
+check_crl=1
+client_cert=0
+client_cert2=0
+config_methods=1
+corrupt_gtk_rekey_mic_probability=1
+country=1
+country_code=1
+ctrl_interface=1
+ctrl_interface_group=1
+deny_mac_file=1
+device_name=1
+device_type=1
+dh_file=0
+dh_file2=0
+disable_dgaf=1
+disable_pmksa_caching=1
+disassoc_low_ack=1
+domain_name=1
+dot11RSNAConfigPMKLifetime=1
+dot11RSNAConfigPMKReauthThreshold=1
+dot11RSNAConfigSATimeout=1
+dpp_config_processing=1
+dpp_connector=1
+dpp_csign=1
+dpp_netaccesskey=1
+dpp_netaccesskey_expiry=1
+driver=1
+driver_param=1
+dtim_period=1
+dynamic_vlan=1
+eap=1
+eap_fast_a_id=0
+eap_fast_a_id_info=0
+eap_fast_prov=1
+eap_message=1
+eapol_flags=1
+eapol_key_index_workaround=1
+eapol_version=1
+eap_reauth_period=1
+eap_server=1
+eap_sim_aka_result_ind=1
+eap_sim_db=1
+eap_user_file=1
+engine=1
+engine_id=1
+esr=1
+extra_cred=0
+fast_max_pac_list_len=1
+fast_pac_format=1
+fast_reauth=1
+filter_ssids=1
+fragment_size=1
+fragm_threshold=1
+freq_list=1
+frequency=1
+friendly_name=1
+group=1
+hessid=1
+home_ca_cert=0
+home_imsi=0
+home_milenage=0
+home_password=0
+home_realm=1
+home_username=0
+hs20=1
+hs20_conn_capab=1
+hs20_deauth_req_timeout=1
+hs20_icon=1
+hs20_operating_class=1
+hs20_oper_friendly_name=1
+hs20_wan_metrics=1
+ht_capab=1
+hw_mode=1
+iapp_interface=1
+identity=0
+id_str=1
+ieee80211ac=1
+ieee80211d=1
+ieee80211h=1
+ieee80211n=1
+ieee80211w=1
+ieee8021x=1
+ignore_assoc_probability=1
+ignore_auth_probability=1
+ignore_broadcast_ssid=1
+ignore_probe_probability=1
+ignore_reassoc_probability=1
+include_tls_length=1
+interface=1
+internet=1
+interworking=1
+ipaddr_type_availability=1
+keyid=0
+key_id=1
+key_mgmt=1
+load_dynamic_eap=1
+logger_stdout=1
+logger_stdout_level=1
+logger_syslog=1
+logger_syslog_level=1
+macaddr_acl=1
+manage_p2p=1
+manufacturer=1
+manufacturer_url=1
+max_listen_interval=1
+max_num_sta=1
+mixed_cell=1
+mobility_domain=1
+mode=1
+model_description=1
+model_name=1
+model_number=1
+model_url=1
+nai_realm=1
+nas_identifier=1
+network=1
+network_auth_type=1
+obss_interval=1
+ocsp_stapling_response=1
+okc=1
+opensc_engine_path=1
+osen=1
+osu_friendly_name=1
+osu_icon=1
+osu_method_list=1
+osu_nai=1
+osu_server_uri=1
+osu_service_desc=1
+osu_ssid=1
+os_version=1
+own_ip_addr=1
+pac_file=0
+pac_key_lifetime=1
+pac_key_refresh_time=1
+pac_opaque_encr_key=0
+pairwise=1
+password=0
+pbc=1
+pbc_in_m1=1
+pcsc=1
+peaplabel=1
+peap_outer_success=1
+peapver=1
+peerkey=0
+phase1=0
+phase2=0
+pin=0
+pkcs11_engine_path=1
+pkcs11_module_path=1
+pmk_r1_push=1
+preamble=1
+priority=1
+private_key=0
+private_key2=0
+private_key2_passwd=0
+private_key_passwd=0
+proactive_key_caching=1
+proto=1
+proxy_arp=1
+psk=0
+pwd_group=0
+qlink_iface=1
+qlink_server_addr=1
+qos_map_set=1
+r0_key_lifetime=1
+r0kh=0
+r1_key_holder=0
+r1kh=0
+radius_acct_interim_interval=1
+radius_acct_req_attr=0
+radius_auth_req_attr=0
+radius_das_client=0
+radius_das_port=1
+radius_das_require_event_timestamp=1
+radius_das_time_window=1
+radius_request_cui=1
+radius_retry_primary_interval=1
+radius_server_auth_port=1
+radius_server_clients=1
+radius_server_ipv6=1
+reassociation_deadline=1
+require_ht=1
+require_vht=1
+result_ind=1
+roaming_consortium=1
+rsn_pairwise=1
+rsn_preauth=1
+rsn_preauth_interfaces=1
+rts_threshold=1
+sae_anti_clogging_threshold=1
+sae_groups=0
+scan_freq=1
+scan_ssid=1
+serial_number=1
+server_cert=0
+server_id=1
+sim_min_num_chal=1
+skip_cred_build=1
+skip_inactivity_poll=1
+ssid=1
+ssid2=1
+start_disabled=1
+subject_match=0
+subject_match2=0
+supported_chan_width=1
+supported_rates=1
+tdls_prohibit=1
+tdls_prohibit_chan_switch=1
+time_advertisement=1
+time_zone=1
+tnc=1
+tx_queue_data([0123]|after_beacon|beacon)_aifs=1
+tx_queue_data([0123]|after_beacon|beacon)_burst=1
+tx_queue_data([0123]|after_beacon|beacon)_cwmax=1
+tx_queue_data([0123]|after_beacon|beacon)_cwmin=1
+uapsd_advertisement_enabled=1
+uesa=1
+upc=1
+update_config=1
+upnp_iface=1
+use_pae_group_addr=1
+utf8_ssid=1
+uuid=0
+vendor_elements=1
+venue_group=1
+venue_name=1
+venue_type=1
+vht_capab=1
+vht_max_mpdu_len=1
+vht_oper_centr_freq_seg0_idx=1
+vht_oper_centr_freq_seg1_idx=1
+vht_oper_chwidth=1
+vlan_bridge=1
+vlan_file=1
+vlan_naming=1
+vlan_tagged_interface=1
+wds_bridge=1
+wds_sta=1
+wep_default_key=1
+wep_key[0123]=0
+wep_key_len_broadcast=1
+wep_key_len_unicast=1
+wep_rekey_period=1
+wep_tx_keyidx=1
+wmm_ac_(be|bk|vi|vo)_acm=1
+wmm_ac_(be|bk|vi|vo)_aifs=1
+wmm_ac_(be|bk|vi|vo)_cwmax=1
+wmm_ac_(be|bk|vi|vo)_cwmin=1
+wmm_ac_(be|bk|vi|vo)_txop_limit=1
+wmm_enabled=1
+wnm_sleep_mode=1
+wpa=1
+wpa_gmk_rekey=1
+wpa_group_rekey=1
+wpa_key_mgmt=1
+wpa_pairwise=1
+wpa_passphrase=0
+wpa_psk=0
+wpa_psk_file=0
+wpa_psk_radius=1
+wpa_ptk_rekey=1
+wpa_strict_rekey=1
+wps_cred_processing=1
+wps_independent=1
+wps_nfc_dev_pw=0
+wps_nfc_dev_pw_id=0
+wps_nfc_dh_privkey=0
+wps_nfc_dh_pubkey=0
+wps_pin_requests=1
+wps_pp_devname=1
+wps_pp_enable=1
+wps_rf_bands=1
+wps_state=1
+EOF
+)
+
+ALLOWED_LIST_REGEX=$(echo "$PARAM_LIST" | awk '
+	BEGIN {
+		RS = "\n"
+		FS = "="
+
+		is_first_parameter = 1
+
+		printf "%s","("
+	}
+
+	{
+		if ($2 == "1") {
+			if (is_first_parameter == 1) {
+				printf "%s",$1
+				is_first_parameter = 0
+			} else {
+				printf "|%s",$1
+			}
+		}
+	}
+
+	END {
+		printf "%s",")"
+	}
+'
+)
+
+cat $config_file | awk -v allowed_list_regex="$ALLOWED_LIST_REGEX" '
+	BEGIN {
+		RS = "\n"
+		FS = RS
+
+		comm_start_regex = "#"
+		any_param_regex = "^[[:space:]]*[^[:space:]=]+[[:space:]]*="
+		allowed_param_regex = "^[[:space:]]*" allowed_list_regex "[[:space:]]*="
+
+		in_blob = 0
+
+		blob_start_regex = "^[[:space:]]*blob-base64-.*="
+		blob_end_regex = "^[[:space:]]*}"
+		network_end_regex = blob_end_regex
+	}
+
+	{
+		string = $0
+
+		if (in_blob) {
+			where = match(string, blob_end_regex)
+			if (RLENGTH != -1) {
+				in_blob = 0
+			} else {
+				# Use 0 because blob is in base64
+				gsub(/./, "0", string)
+			}
+
+			print string
+			next
+		}
+
+		# Change comment content to * before any substitutions
+		where = match(string, comm_start_regex)
+		if (RLENGTH != -1) {
+			comment_offt = substr(string, 0, RSTART)
+			comment = substr(string, RSTART + 1)
+
+			gsub(/./, "*", comment)
+
+			string = comment_offt comment
+		}
+
+		where = match(string, blob_start_regex)
+		if (RLENGTH != -1) {
+			in_blob = 1
+			print string
+			next
+		}
+
+		where = match(string, allowed_param_regex)
+		if (RLENGTH != -1) {
+			print string
+			next
+		}
+
+		where = match(string, any_param_regex)
+		if (RLENGTH != -1) {
+			key = substr(string, 0, RLENGTH)
+			value = substr(string, RLENGTH + 1)
+
+			gsub(/./, "*", value)
+
+			print key value
+			next
+		}
+
+		# Preserve end of network symbol
+		where = match(string, network_end_regex)
+		if (RLENGTH != -1) {
+			print string
+		}
+	}
+'

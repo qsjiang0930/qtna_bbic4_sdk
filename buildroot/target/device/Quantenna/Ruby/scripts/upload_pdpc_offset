@@ -1,0 +1,6 @@
+#! /bin/sh
+# The ip address for the computer is specified by argument 1.
+echo "Upload pdpc_offset_qsr2k.bin from $1"
+tftp -g -l /pdpc_offset_qsr2k.bin -r pdpc_offset_qsr2k.bin $1
+update_bootcfg_file /pdpc_offset_qsr2k.bin
+

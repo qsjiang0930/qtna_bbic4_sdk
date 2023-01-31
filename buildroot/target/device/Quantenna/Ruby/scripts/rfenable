@@ -1,0 +1,137 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+. $base_scripts/start-helpers.sh
+
+rfdisabled="/tmp/rfdisabled"
+intf_dir="/sys/class/net"
+first_run="/tmp/first_run"
+
+procname=$(basename $0)
+usage="Usage: $procname { 0 | 1 }"
+
+cpu_id=`cat /proc/hw_revision | cut -d '_' -f 1`
+
+start_hostapd()
+{
+	local repeater_mode=$1
+	local pidof_hostapd=`pidof hostapd`
+
+	if [ "$pidof_hostapd" = "" ]; then
+		start_security_daemon "ap" $repeater_mode
+	else
+		hostapd_cli reconfigure
+	fi
+}
+
+start_wpa_supplicant()
+{
+	local repeater_mode=$1
+	local pidof_wpa=`pidof wpa_supplicant`
+
+	if [ "$pidof_wpa" = "" ]; then
+		start_security_daemon "sta" $repeater_mode
+	else
+		wpa_cli reconfigure
+	fi
+}
+
+security_daemon_process()
+{
+	# check repeater mode enabled or not
+	isrepeater=`call_qcsapi -u verify_repeater_mode`
+
+	if [ $isrepeater -eq 1 ]; then
+		start_hostapd "1"
+		start_wpa_supplicant "1"
+
+	else
+		mode=`call_qcsapi -u get_mode wifi0`
+		if [ "$mode" = "Access point" ]; then
+			start_hostapd "0"
+		else
+			start_wpa_supplicant "0"
+		fi
+	fi
+}
+
+rfstatus_update()
+{
+	ifstatus=$1
+
+	if [ $ifstatus = "1" ]; then
+		if [ -f "$first_run" ] && [ ! -f "$rfdisabled" ] ; then
+			 return 0
+		fi
+
+		rm -f $rfdisabled
+
+		if [ "$cpu_id" == "bbic4" ]; then
+			# return AFE to normal configuration
+			iwpriv wifi0 setparam 585 0
+		fi
+
+		# Restart wireless devices
+		for dev in `ls -1 /sys/devices/virtual/net/ | grep -E 'wifi|wds'` ; do
+			if [ ! -f "/tmp/$dev.disabled" ]; then
+				ifconfig $dev up
+			fi
+		done
+
+		if  [ ! -f "$first_run" ]; then
+			touch $first_run
+		fi
+	else
+		if [  -f "$rfdisabled" ]; then
+			return 0
+		fi
+		touch $rfdisabled
+
+		mode=`call_qcsapi -u get_mode wifi0`
+
+		# Stop wireless devices
+		for dev in `ls -1 /sys/devices/virtual/net/ | grep -E 'wifi|wds'` ; do
+			if [ `ifconfig $dev | grep MTU | awk '{print $1}'` != 'UP' ] ; then
+				touch "/tmp/$dev.disabled"
+			else
+				/bin/rm -f "/tmp/$dev.disabled"
+			fi
+			ifconfig $dev down
+		done
+
+		if  [ ! -f "$first_run" ]; then
+			touch $first_run
+		fi
+
+		if [ "$mode" == "Station" ]; then
+			# stop wpa until rf is enabled again
+			wpa_cli terminate
+		fi
+
+		if [ "$cpu_id" == "bbic4" ]; then
+			# set AFE to off state
+			iwpriv wifi0 setparam 585 1
+		fi
+	fi
+
+	return 1
+}
+
+if [ -z "$1" ]; then
+	echo $usage
+	exit 1
+fi
+
+
+if [ "$1" = "0" ] || [ "$1" = "off" ]; then
+	rfstatus_update "0"
+	exit 0
+fi
+
+if [ "$1" = "1" ] || [ "$1" = "on" ]; then
+	rfstatus_update "1"
+	if [ $? -ne 0 ]; then
+		security_daemon_process
+	fi
+	exit 0
+fi

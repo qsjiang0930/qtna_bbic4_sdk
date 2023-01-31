@@ -1,0 +1,15 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_90_TO_v37_4_0_91 Version v37.4.0.90 to version v37.4.0.91 changes
+ *
+ * \subsection v37_4_0_90_TO_v37_4_0_91Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.90 and v37.4.0.91
+ * \li \ref qcsapi_wifi_get_vopt
+ * \li \ref qcsapi_wifi_del_temporary_mac_filter_addr
+ * \li \ref qcsapi_calcmd_check_rfic_health
+ * \li \ref qcsapi_wifi_set_vopt
+ * \li \ref qcsapi_wifi_add_temporary_mac_filter_addr
+ */
+

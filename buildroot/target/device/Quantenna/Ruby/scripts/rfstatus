@@ -1,0 +1,30 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+. $base_scripts/start-helpers.sh
+
+rfdisabled="/tmp/rfdisabled"
+
+# 0 - Off
+# 1 - On
+# 2 - Turning off
+# 3 - Turning on
+rfenable=0
+
+for dev in `ls -1 /sys/devices/virtual/net/ | grep -E 'wifi|wds'` ; do
+    if [ `ifconfig $dev | grep MTU | awk '{print $1}'` = 'UP' ] ; then
+	rfenable=1
+	break
+    fi
+done
+
+hostap_pid=`pidof hostapd`
+wpa_supp_pid=`pidof wpa_supplicant`
+
+if [ $rfenable = 0 ] && [ ! -e $rfdisabled ]; then
+	rfenable=2
+elif [ $rfenable = 1 ] && { [ -z "$hostap_pid" -a -z "$wpa_supp_pid" ] || [ -e $rfdisabled ]; } ; then
+	rfenable=3
+fi
+
+exit $rfenable

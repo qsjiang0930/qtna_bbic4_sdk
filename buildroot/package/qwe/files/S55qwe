@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+# Start qwe
+#
+
+base_scripts="/scripts"
+
+. $base_scripts/start-helpers.sh
+. import_qtnenv
+
+start() {
+	if [ "$persistent_path" = "" ]; then
+		get_security_path
+		set_qtnenv persistent_path $security_file_path
+	fi
+
+	if [ "$qtn_sta_ifname" = "" ]; then
+		set_qtnenv qtn_sta_ifname wifi0
+	fi
+
+	for wlan in $(ls /lib/wlan/wlan[0-9].sh 2>/dev/null); do
+		wlan=$(basename $wlan | sed 's/.sh//g')
+		# skip if fail to detect HW
+		hw_status=$(qweaction $wlan detect_hw)
+		hw_status=${hw_status:-unknown}
+		if [ "$hw_status" = "Fail" ]; then
+			continue
+		fi
+		qweaction $wlan load_driver
+		# skip if RF is not present after load driver
+		rf_status=$(qweaction $wlan status rf)
+		rf_status=${rf_status:-unknown}
+		if [ "$rf_status" = "NotPresent" ]; then
+			qweaction $wlan unload_driver
+			continue
+		fi
+		set_qtnenv qwe_active_adpt $wlan
+		if [ "$STATELESS" != "y" ]; then
+			qweaction $wlan up
+		fi
+		# add qwe PM QoS requirement
+		echo "add qwe -1" > /proc/soc_pm
+		if [ "$(qweconfig get qweeventd)" = "enable" ]; then
+			qweeventd &
+		fi
+		break
+	done
+}
+stop() {
+	if [ "$qwe_active_adpt" != "" ]; then
+		qweaction wlan1 down
+		qweaction wlan1 unload_driver
+		# remove qwe PM QoS requirement
+		echo "remove qwe" > /proc/soc_pm
+		killall qweeventd
+	fi
+}
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+    start)
+        start
+	;;
+    stop)
+	stop
+	;;
+    restart|reload)
+	restart
+	;;
+    *)
+	echo $"Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
+

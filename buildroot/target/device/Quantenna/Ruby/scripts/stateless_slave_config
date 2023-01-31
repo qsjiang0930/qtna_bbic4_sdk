@@ -1,0 +1,31 @@
+. /scripts/start-helpers.sh
+
+qcsapi_rpc_target=$(get_ep_init_ipaddr)
+slave_ipaddr=192.168.1.111/16
+# Enable for WFA certification only
+#wfa=1
+
+wifi0_SSID=Q-stateless
+wifi0_auth_mode=PSKAuthentication
+wifi0_passphrase=quantenna1
+
+# autochan selection parameters
+#
+# Please don't enable and modify these parameters unless you
+# certainly know what you are doing or you are recommended to do.
+
+#wifi0_cci_instnt=0
+#wifi0_aci_instnt=0
+#wifi0_cci_longterm=100
+#wifi0_aci_longterm=0
+#wifi0_range_cost=10
+#wifi0_dfs_cost=0
+#wifi0_min_cci_rssi=-80
+#wifi0_maxbw_minbenefit=2
+#wifi0_dense_cci_span=5
+#wifi0_dbg_level=0
+
+# custom feature credential
+#
+# custom_cred_file=/mnt/jffs2/custom_cred
+# custom_pkey_file=/mnt/jffs2/custom_pkey

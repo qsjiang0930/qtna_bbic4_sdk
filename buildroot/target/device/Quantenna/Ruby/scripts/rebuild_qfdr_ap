@@ -1,0 +1,50 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+
+. ${base_scripts}/start-helpers.sh
+. import_qtnenv
+
+rebuild_5g_ap() {
+	if [ "$(call_qcsapi get_qfdr_param 5g_ap_mode)" = "fixed" ]; then
+		ssid="anyssid"
+	else
+		ssid=$(get_associated_ssid)
+		if [ "$ssid" = "" ]; then
+			ssid=$(perform_cmd_on_remote get_associated_ssid)
+		fi
+		if [ "$ssid" = "" ]; then
+			return
+		fi
+	fi
+	build_qfdr_ap 5g "$ssid"
+	perform_cmd_on_remote "build_qfdr_ap 5g \"$ssid\""
+}
+
+rebuild_24g_ap() {
+	if [ "$(call_qcsapi get_qfdr_param 5g_ap_mode)" = "fixed" ]; then
+		ssid="anyssid"
+	else
+		ssid=$(get_associated_ssid)
+		if [ "$ssid" = "" ]; then
+			ssid=$(perform_cmd_on_remote get_associated_ssid)
+		fi
+		if [ "$ssid" = "" ]; then
+			return
+		fi
+	fi
+	perform_cmd_on_remote "build_qfdr_ap 2.4g \"$ssid\""
+}
+
+if [ "$qfdr_master_board" != "y" ]; then
+	echo "$0 just is available on master"
+	exit
+fi
+
+if [ "$1" = "5g" ]; then
+	rebuild_5g_ap
+else
+	rebuild_24g_ap
+fi
+
+echo "complete"

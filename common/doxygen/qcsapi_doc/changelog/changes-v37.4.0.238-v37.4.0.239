@@ -1,0 +1,19 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_238_TO_v37_4_0_239 Version v37.4.0.238 to version v37.4.0.239 changes
+ *
+ * \subsection v37_4_0_238_TO_v37_4_0_239Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.238 and v37.4.0.239
+ * \li \ref qcsapi_wifi_xcac_set
+ * \li \ref qcsapi_wifi_xcac_get
+ *
+ * \subsection v37_4_0_238_TO_v37_4_0_239Proto Function prototype changes
+ *
+ * The following function prototypes were modified between versions v37.4.0.238 and v37.4.0.239
+ *  - \ref qcsapi_wifi_start_phy_scan
+ *    - Old prototype: int qcsapi_wifi_start_phy_scan(const char *ifname, uint16_t bw, uint32_t *freqs, uint32_t freqs_num);
+ *    - New prototype: int qcsapi_wifi_start_phy_scan(const char *ifname, uint16_t bw, const struct qcsapi_int_array64 *freqs, uint32_t freqs_num);
+ */
+

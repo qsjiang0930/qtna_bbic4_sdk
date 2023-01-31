@@ -1,0 +1,57 @@
+#! /bin/sh
+channel=$1
+bw=$2
+tx_chain=$3
+groupSize=$4
+idx0=$5
+
+enable_vco_cal 0
+enable_txpow_cal 0
+
+if [ "$1" -gt "15" ]
+then
+	band=1
+	legacy=2
+else
+	band=0
+	legacy=1
+fi
+
+echo "txlo_lpcalib (TX LO Calibration using LP) started:"
+echo "channel=$channel  bw=$bw  band=$band  tx_chain=$tx_chain  groupSize=$groupSize  idx0=$idx0"
+
+if [ $bw -le 40 -o  "$band" = "1" ]
+then
+	if [ "$tx_chain" = "0" ]
+	then
+		echo "calcmd 12 0 14 0 1 113 2 14 3 $bw 4 40 5 $legacy" > /sys/devices/qdrv/control
+		echo "txlo_lpcalib script: calcmd 12 with tx_chain 0 done"
+	elif [ "$tx_chain" = "1" ]
+	then
+		echo "calcmd 12 0 14 0 1 114 2 14 3 $bw 4 40 5 $legacy" > /sys/devices/qdrv/control
+		echo "txlo_lpcalib script: calcmd 12 with tx_chain 1 done"
+	elif [ "$tx_chain" = "2" ]
+	then
+		echo "calcmd 12 0 14 0 1 116 2 14 3 $bw 4 40 5 $legacy" > /sys/devices/qdrv/control
+		echo "txlo_lpcalib script: calcmd 12 with tx_chain 2 done"
+	elif [ "$tx_chain" = "3" ]
+	then
+		echo "calcmd 12 0 14 0 1 120 2 14 3 $bw 4 40 5 $legacy" > /sys/devices/qdrv/control
+		echo "txlo_lpcalib script: calcmd 12 with tx_chain 3 done"
+	else
+		echo "TBD"
+	fi
+
+	echo "calcmd 1 0 8 0 1 $band 2 $channel" > /sys/devices/qdrv/control
+	enable_vco_cal 0
+
+	echo "calcmd 70 0 10 0 1 $band 2 $tx_chain 3 $groupSize" > /sys/devices/qdrv/control
+	echo "txlo_lpcalib script: calcmd 70 done"
+else
+		echo "TBD"
+fi
+
+enable_vco_cal 1
+
+echo "txlo_lpcalib (TX LO Calibration using LP) done!"
+

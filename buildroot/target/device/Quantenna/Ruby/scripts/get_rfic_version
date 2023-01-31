@@ -1,0 +1,51 @@
+#! /bin/sh
+
+# simplified BBIC4 version of script from BBIC5 sources
+# so no need to check for RF 0/1/2
+
+# read version register (6) for selected RF
+# "0" is RF - only RF0 for BBIC4
+version_str=`readrfmem 0 6`
+
+# trim all but last parameter from returned string
+version_val=`echo $version_str | awk '{ print $NF }'`
+
+# convert from hex to decimal since shell and awk do decimal math
+version_int=`echo $(($version_val))`
+
+echo $version_int | awk '
+BEGIN
+{
+    FS=""
+}
+{
+	input=$0
+
+	# bits 1:0 of value are chip variant (varies within chip version)
+	tmp_var=input % 4
+
+	# bits 4:2 of value are chip version ( 0 == Rev A, etc )
+	tmpval=input - tmp_var
+	tmpval=tmpval / 4
+	tmp_ver=tmpval % 8
+
+	# bits 8:5 of value are chip ID (8 bits of RFID set)
+	tmpval=tmpval - tmp_ver
+	tmp_proj=tmpval / 8
+
+	# only RFIC versions 3/4/6/8 currently known - anything unknown
+	# will print out as RFIC4 until this script is updated
+	if (tmp_proj == 0) {
+		print "RFIC3"
+	} else if ((tmp_proj == 4) || (tmp_proj == 7)) {
+		print "RFIC8", "Rev", tmp_ver, "Var", tmp_var
+		print "Warning! RFIC8 is not designed for BBIC4 use!"
+	} else if (tmp_proj == 3) {
+		print "RFIC6", "Rev", tmp_ver, "Var", tmp_var
+	} else if (tmp_proj == 5) {
+		print "RFIC622", "Rev", tmp_ver, "Var", tmp_var
+	} else {
+		print "RFIC4", "Rev", tmp_ver, "Var", tmp_var
+	}
+}'
+

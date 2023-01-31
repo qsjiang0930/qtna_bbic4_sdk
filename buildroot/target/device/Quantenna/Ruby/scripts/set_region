@@ -1,0 +1,116 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+
+. $base_scripts/start-helpers.sh
+
+procname=$(basename $0)
+
+wifi_if=$1
+reg_region=$2
+wifi_mode=$3
+repeater=$4
+
+get_tx_pwr_5g_for_region_none()
+{
+	min_tx_pwr_5g=`get_bootval min_tx_power`
+	if [ $min_tx_pwr_5g -le 0 ] || [ "$min_tx_pwr_5g" == "" ]; then
+		# DEFAULT_MIN_TX_POWER_5GHz
+		min_tx_pwr_5g=9
+	fi
+
+	max_tx_pwr_5g=`get_bootval max_tx_power`
+	if [ $max_tx_pwr_5g -le 0 ] || [ "$max_tx_pwr_5g" == "" ]; then
+		# DEFAULT_MAX_TX_POWER_5GHz
+		max_tx_pwr_5g=19
+	fi
+
+	tx_pwr_5g=`get_wifi_config wifi0 pwr`
+	if [ $? -ne 0 ]; then
+		tx_pwr_5g=$max_tx_pwr_5g
+	elif [ $tx_pwr_5g -gt $max_tx_pwr_5g ]; then
+		tx_pwr_5g=$max_tx_pwr_5g
+	elif [ $tx_pwr_5g -lt $min_tx_pwr_5g ]; then
+		tx_pwr_5g=$min_tx_pwr_5g
+	fi
+}
+
+get_tx_pwr_2g_for_region_none()
+{
+	min_tx_pwr_2g=`get_bootval min_tx_power_2g`
+	if [ $min_tx_pwr_2g -le 0 ] || [ "$min_tx_pwr_2g" == "" ]; then
+		# DEFAULT_MIN_TX_POWER_2GHz
+		min_tx_pwr_2g=9
+	fi
+
+	max_tx_pwr_2g=`get_bootval max_tx_power_2g`
+	if [ $max_tx_pwr_2g -le 0 ] || [ "$max_tx_pwr_2g" == "" ]; then
+		# DEFAULT_MAX_TX_POWER_2GHz
+		max_tx_pwr_2g=19
+	fi
+
+	tx_pwr_2g=`get_wifi_config wifi0 pwr_2g`
+	if [ $? -ne 0 ]; then
+		tx_pwr_2g=$max_tx_pwr_2g
+	elif [ $tx_pwr_2g -gt $max_tx_pwr_2g ]; then
+		tx_pwr_2g=$max_tx_pwr_2g
+	elif [ $tx_pwr_2g -lt $min_tx_pwr_2g ]; then
+		tx_pwr_2g=$min_tx_pwr_2g
+	fi
+}
+
+set_region_none()
+{
+	get_tx_pwr_2g_for_region_none
+	echo_with_logging "$procname: 2.4G Tx Power = $tx_pwr_2g"
+
+	get_tx_pwr_5g_for_region_none
+	echo_with_logging "$procname: 5G Tx Power = $tx_pwr_5g"
+
+	set_avail_chans all 20
+	chan_list=$(call_qcsapi -u get_list_of_channels $wifi_if)
+	chan_list=$(echo $chan_list | sed 's/,/ /g')
+	echo_with_logging "$procname: Channel list = $chan_list"
+	for channel in $chan_list
+	do
+		is_24_ch=$(is_channel_in_2_4_ghz_band $channel)
+		if [ "$is_24_ch" == "1" ]; then
+			max_tx_pwr=$tx_pwr_2g
+		else
+			max_tx_pwr=$tx_pwr_5g
+		fi
+		cfg_txpower_val=`expr $channel '*' 16777216 + $channel '*' 65536 + $max_tx_pwr '*' 256 + 1`
+		# echo_with_logging "$procname: channel = $channel, is_24_ch = $is_24_ch, max_tx_pwr = $max_tx_pwr, cfg_txpower_val = $cfg_txpower_val"
+		iwpriv $wifi_if init_txpower $cfg_txpower_val
+	done
+	return 0
+}
+
+set_region()
+{
+	if ! is_valid_regulatory_region $reg_region; then
+		echo_with_logging "$procname: Error: unsupported region $reg_region"
+		return 1
+	fi
+	call_qcsapi -u -q set_regulatory_region $wifi_if $reg_region
+	call_qcsapi -u -q set_option $wifi_if 802_11h 1
+	if [ $wifi_mode == "ap" ] || [ $repeater == "1" ]; then
+		iwpriv $wifi_if dfs_fast_switch 1
+	fi
+	return 0
+}
+
+echo_with_logging "$procname: Setting regulatory region dev_name=$wifi_if region=$reg_region mode=$wifi_mode repeater=$repeater"
+
+if [ "$reg_region" = "none" ]; then
+	if ! set_region_none; then
+		return 1
+	fi
+else
+	if ! set_region; then
+		return 1
+	fi
+fi
+
+return 0
+

@@ -1,0 +1,11 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_187_TO_v37_4_0_188 Version v37.4.0.187 to version v37.4.0.188 changes
+ *
+ * \subsection v37_4_0_187_TO_v37_4_0_188Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.187 and v37.4.0.188
+ * \li \ref qcsapi_regulatory_get_list_regulatory_regions_ext
+ */
+

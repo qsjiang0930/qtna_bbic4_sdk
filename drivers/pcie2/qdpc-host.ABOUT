@@ -1,0 +1,17 @@
+about_resource: qdpc-host.ko
+name: PCIe host driver.
+version: 1.0.0
+homepage_url: Provided as part of the SDK.
+description: Linux kernel driver to provide topaz PCIe host functionality
+notes: Quantenna written/provided
+
+license_name: GNU General Public License Version 2
+license_expression: gpl-2.0
+license_file: ../../gpl-2.0.LICENSE
+
+copyright: Copyright (c) 20012-2018 Quantenna Communications Inc
+owner: Quantenna Communications Inc
+
+redistribute: y
+attribute: y
+modified: n

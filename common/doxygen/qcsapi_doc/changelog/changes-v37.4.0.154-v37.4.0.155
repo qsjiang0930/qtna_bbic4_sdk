@@ -1,0 +1,14 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_154_TO_v37_4_0_155 Version v37.4.0.154 to version v37.4.0.155 changes
+ *
+ * \subsection v37_4_0_154_TO_v37_4_0_155Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.154 and v37.4.0.155
+ * \li \ref qcsapi_wifi_set_autochan_weight
+ * \li \ref qcsapi_wifi_get_autochan_weights
+ * \li \ref qcsapi_wifi_set_scs_chan_weight
+ * \li \ref qcsapi_wifi_get_scs_chan_weights
+ */
+

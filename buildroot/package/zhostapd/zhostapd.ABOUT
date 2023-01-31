@@ -1,0 +1,23 @@
+about_resource: zhostapd
+name: Hostapd and WPA supplicant daemons
+version: v2.7-devel
+homepage_url: Provided as part of the SDK.
+description: A userspace daemon implementing an access point authenticator
+notes: Modified by Quantenna to support quantenna wireless drivers and configuration stack
+
+license_name: |
+    BSD 3-clause
+    GNU General Public License Version 2
+license_expression: bsd-new or gpl-2.0
+license_file: |
+    ../../../bsd-new.LICENSE
+    ../../../gpl-2.0.LICENSE
+
+copyright: |
+    Copyright (c) 2004-2017, Jouni Malinen <j@w1.fi> and contributors
+    Copyright (c) 2015-2018 Quantenna Communications Inc
+owner: Quantenna Communications Inc
+
+redistribute: y
+attribute: y
+modified: y

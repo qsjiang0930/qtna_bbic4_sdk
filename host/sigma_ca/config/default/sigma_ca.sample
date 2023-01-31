@@ -1,0 +1,10 @@
+# control agent listener IP address and port
+ca_ipaddr=br0
+ca_port=9000
+
+# DUT address, one of the following:
+#  raw,iface,mac
+#  tcp,ipaddr
+#  udp,ipaddr
+#  qlink
+dut_addr=qlink

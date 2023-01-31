@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# WARNING - this file is designed run on a Linux build system to bundle locally
+# generated power table files for loading on a Quantenna target system using
+# the txpwr_tftp_get script
+#
+# Creates tar archive containing all files in the specified directory
+# if the archive already exists deletes and replaces it
+# new archive will be named <out_name>.ptar for easy identification
+#
+# Load the generated <out_name>.ptar script on your tftp server to use txpwr_tftp_get
+
+suffix="ptar"
+
+if [ $# -ne 2 ]
+then:
+        echo "Usage: $0 <out_name> <source_directory>"
+        exit 1
+fi
+
+outname=$1
+path=$2
+
+rm -f $outname.$suffix
+tar -cz --anchored -f $outname.$suffix --xform s/$path/$outname/ $path

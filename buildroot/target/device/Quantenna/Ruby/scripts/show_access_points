@@ -1,0 +1,3 @@
+#!/bin/sh
+
+call_qcsapi show_access_points $@

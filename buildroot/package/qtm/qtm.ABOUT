@@ -1,0 +1,16 @@
+about_resource: qtm
+name: QTM daemon
+version: 1.0.0
+homepage_url: Binary only, provided as part of the SDK.
+description: A Daemon implementing Video Stream Protection feature
+notes: Quantenna written/provided
+
+license: qtn_proprietary
+license_name: Quantenna Proprietary
+
+copyright: Copyright (c) 2008-2018 Quantenna Communications Inc
+owner: Quantenna Communications Inc
+
+redistribute: n
+attribute: n
+modified: n

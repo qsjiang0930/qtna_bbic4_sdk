@@ -1,0 +1,11 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_236_TO_v37_4_0_237 Version v37.4.0.236 to version v37.4.0.237 changes
+ *
+ * \subsection v37_4_0_236_TO_v37_4_0_237Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.236 and v37.4.0.237
+ * \li \ref qcsapi_wifi_get_chan_phy_info
+ */
+

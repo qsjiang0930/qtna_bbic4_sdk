@@ -1,0 +1,17 @@
+about_resource: zminihttpd
+name: HTTP server
+version: 1.19
+homepage_url: http://acme.com/software/mini_httpd/mini_httpd-1.19.tar.gz
+description: Provides HTTP server for implementing the web UI for control and configuration of the board
+notes: HTTP server used for web UI.
+
+license_name: BSD 3-clause
+license_expression: bsd-new
+license_file: ../../../bsd-new.LICENSE
+
+copyright: Copyright (c) 2015-2018 Quantenna Communications Inc
+owner: Quantenna Communications Inc
+
+redistribute: n
+attribute: y
+modified: n

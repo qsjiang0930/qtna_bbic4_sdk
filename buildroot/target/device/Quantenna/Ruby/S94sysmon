@@ -1,0 +1,69 @@
+#!/bin/sh
+
+# This script is to start and stop sysmond service.
+
+DEF_CONFIG=/etc/sysmond.conf
+USR_CONFIG=/mnt/jffs2/sysmond.conf
+
+start()
+{
+
+	if [ -z "`pidof sysmond`" ]
+	then
+		enabled=`get_wifi_config wifi0 sysmon`
+
+		if [ "$enabled" == "1" ]
+		then
+
+			if [ -f $USR_CONFIG ]
+			then
+				config=$USR_CONFIG
+			else
+				config=$DEF_CONFIG
+			fi
+
+
+			if [ -x /sbin/sysmond ]
+			then
+				echo "Starting sysmond with config $config"
+				/sbin/sysmond -c $config
+			else
+				echo "/sbin/sysmond not found"
+				exit 0
+			fi
+		else
+			echo "sysmond is not enabled/set"
+		fi
+	else
+		echo "sysmond is already running"
+	fi
+}
+
+stop()
+{
+	echo "Stopping sysmond"
+	killall -q sysmond
+}
+
+restart()
+{
+	stop
+	start
+}
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart|reload)
+		restart
+		;;
+	*)
+	echo "Usage: $0 { start | stop | restart }"
+	exit 1
+esac
+
+exit $?

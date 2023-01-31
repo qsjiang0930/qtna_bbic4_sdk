@@ -1,0 +1,9 @@
+#! /bin/sh
+
+usage() {
+	[ $# -ne 0 ] && echo "$@"
+	qdrvcmd -proc csi_est
+	exit 1
+}
+
+qdrvcmd -proc csi_est $@

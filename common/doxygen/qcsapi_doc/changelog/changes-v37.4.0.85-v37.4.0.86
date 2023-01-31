@@ -1,0 +1,14 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_85_TO_v37_4_0_86 Version v37.4.0.85 to version v37.4.0.86 changes
+ *
+ * \subsection v37_4_0_85_TO_v37_4_0_86Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.85 and v37.4.0.86
+ * \li \ref qcsapi_wifi_get_scs_sample_intv
+ * \li \ref qcsapi_wifi_get_tx_chains
+ * \li \ref qcsapi_get_cca_stats
+ * \li \ref qcsapi_wifi_set_tx_chains
+ */
+

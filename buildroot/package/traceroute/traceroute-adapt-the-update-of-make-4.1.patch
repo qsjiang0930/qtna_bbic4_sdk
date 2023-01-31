@@ -1,0 +1,33 @@
+diff -dur traceroute-2.1.0-org/default.rules traceroute-2.1.0/default.rules
+--- traceroute-2.1.0-org/default.rules	2013-09-09 22:20:06.000000000 +0800
++++ traceroute-2.1.0/default.rules	2020-11-10 16:49:24.108602287 +0800
+@@ -123,7 +123,7 @@
+ all: ../$(MODULE).so
+ 
+ ../$(MODULE).so: $(OBJS) $(LIBDEPS)
+-	$(CC) -shared -o $@ $(OBJS) $(LIBS)
++	$(CC) -shared -o $@ $(OBJS) $(LIBS) -lm
+ 
+ else
+ 
+@@ -156,7 +156,7 @@
+ all: $(TARGET)
+ 
+ $(TARGET): $(OBJS) $(MOD_OBJS) $(LIBDEPS)
+-	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(MOD_OBJS) $(LIBS)
++	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(MOD_OBJS) $(LIBS) -lm
+ 
+ install_what = $(wildcard $(TARGET))
+ install_dir = $(if $(filter $(TARGET),$(SBINUSERS)),$(sbindir),$(bindir))
+diff -dur traceroute-2.1.0-org/Make.rules traceroute-2.1.0/Make.rules
+--- traceroute-2.1.0-org/Make.rules	2016-02-21 04:39:46.000000000 +0800
++++ traceroute-2.1.0/Make.rules	2020-09-18 17:52:16.000000000 +0800
+@@ -139,7 +139,7 @@
+ 			$(wildcard $(srcdir)/$(_lib)/$(_lib).so \
+ 					$(srcdir)/$(_lib)/$(_lib).a))))
+ 
+-override LIBS := $(_libs) -lm $(LIBS)
++override LIBS := $(_libs) $(LIBS)
+ 
+ ifeq ($(CC),gcc)
+ LIBRARY_PATH = $(subst $(empty) ,:,$(libraries))

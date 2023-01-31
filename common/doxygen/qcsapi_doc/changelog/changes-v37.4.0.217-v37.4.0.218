@@ -1,0 +1,13 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_217_TO_v37_4_0_218 Version v37.4.0.217 to version v37.4.0.218 changes
+ *
+ * \subsection v37_4_0_217_TO_v37_4_0_218Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.217 and v37.4.0.218
+ * \li \ref qcsapi_wifi_multi_psk_info_append
+ * \li \ref qcsapi_wifi_multi_psk_info_replace
+ * \li \ref qcsapi_wifi_multi_psk_info_read
+ */
+

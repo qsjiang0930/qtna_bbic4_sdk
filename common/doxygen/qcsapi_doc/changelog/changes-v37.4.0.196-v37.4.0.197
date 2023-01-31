@@ -1,0 +1,17 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_196_TO_v37_4_0_197 Version v37.4.0.196 to version v37.4.0.197 changes
+ *
+ * \subsection v37_4_0_196_TO_v37_4_0_197Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.196 and v37.4.0.197
+ * \li \ref qcsapi_set_params
+ * \li \ref qcsapi_dpp_configure_param
+ *
+ * \subsection v37_4_0_196_TO_v37_4_0_197Removed Removed functions
+ *
+ * The following functions were removed between versions v37.4.0.196 and v37.4.0.197
+ * \li \ref qcsapi_wifi_set_ecc_groups
+ */
+

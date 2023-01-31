@@ -1,0 +1,11 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_173_TO_v37_4_0_174 Version v37.4.0.173 to version v37.4.0.174 changes
+ *
+ * \subsection v37_4_0_173_TO_v37_4_0_174Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.173 and v37.4.0.174
+ * \li \ref qcsapi_wifi_get_if_infoset
+ */
+

@@ -1,0 +1,11 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_63_TO_v37_4_0_64 Version v37.4.0.63 to version v37.4.0.64 changes
+ *
+ * \subsection v37_4_0_63_TO_v37_4_0_64Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.63 and v37.4.0.64
+ * \li \ref qcsapi_get_device_mode
+ */
+

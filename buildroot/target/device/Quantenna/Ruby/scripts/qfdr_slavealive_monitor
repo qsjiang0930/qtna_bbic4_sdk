@@ -1,0 +1,28 @@
+#!/bin/sh
+
+. import_qtnenv
+
+calcu_cpu_usage()
+{
+	(echo $1 $2) | awk '{
+		dsleep = $10 - $4;
+		dawake = $12 - $6;
+		usage = dawake * 100 / (dsleep + dawake);
+		printf("%d", usage);
+	}'
+}
+
+while [ 1 ]; do
+	pre=$(cat /proc/ruby_cpumon)
+	if [ "$(echo "echo hello" | nc $qfdr_remote_ip $nc_port -c 1 -w 5 2>/dev/null)" != "hello" ]; then
+		now=$(cat /proc/ruby_cpumon)
+		cpu_usage=$(calcu_cpu_usage "$pre" "$now")
+		if [ $cpu_usage -gt 98 ]; then
+			echo "=== Warning: CPU overload(usage: $cpu_usage%)"
+			continue
+		fi
+		echo "=== Error: cannot communicate with slave, reboot master to recover"
+		reboot
+	fi
+	sleep 10
+done

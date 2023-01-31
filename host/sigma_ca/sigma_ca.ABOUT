@@ -1,0 +1,17 @@
+about_resource: sigma_ca_host
+name: Sigma Control Agent for remote hosts
+version: 1.0.0
+homepage_url: Provided as part of the SDK.
+description: Sigma CA agent for host (Cavium or others), using only QCSAPI calls
+notes: Quantenna written/provided
+
+license_name: ISC License
+license_expression: isc
+license_file: isc.LICENSE
+
+copyright: Copyright (c) 2017 Quantenna Communications Inc
+owner: Quantenna Communications Inc
+
+redistribute: n
+attribute: y
+modified: n

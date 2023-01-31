@@ -1,0 +1,413 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+base_jffs2="/mnt/jffs2"
+
+. $base_scripts/start-helpers.sh
+. import_qtnenv
+
+select_wifi_mode()
+{
+	use3way=`get_wifi_config wifi0 use3way`
+
+	if [ "$use3way" != "1" ]
+	then
+		if [ $# -lt 1 ]
+		then
+			wifi_mode=`get_wifi_config wifi0 mode`
+		else
+			wifi_mode=$1
+		fi
+
+		if [ "$wifi_mode" != "ap" -a "$wifi_mode" != "sta" -a "$wifi_mode" != "repeater" ]
+		then
+			echo "Invalid WiFi mode $wifi_mode"
+			if [ $# -lt 1 ]
+			then
+				echo "Check the wireless configuration file"
+			fi
+			exit 1
+		fi
+	else
+		wifi_mode_switch=`call_qcsapi -u get_wifi_mode_switch`
+		case $wifi_mode_switch in
+		0)	apflag=ap
+			if [ $do_staticip == "0" ]
+			then
+				ifconfig br0 $default_ipaddr_ap up
+			fi
+			;;
+
+		1)	apflag=sta
+			if [ $do_staticip == "0" ]
+			then
+				ifconfig br0 $default_ipaddr_sta up
+			fi
+			;;
+
+		2)	if [ $do_staticip == "0" ]
+			then
+				dhclient -4 br0&
+				read=1
+				dhclient_lease=`cat /var/lib/dhcp/dhclient.leases 2>/dev/null`
+				while [ "$dhclient_lease" == "" -a $read -le 5 ]
+				do
+					sleep 1
+					dhclient_lease=`cat /var/lib/dhcp/dhclient.leases 2>/dev/null`
+					read=`expr $read + 1`
+				done
+				if [ "$dhclient_lease" != "" ]
+				then
+					apflag=ap
+					start_dhcp=0
+				else
+					apflag=sta
+					start_dhcp=1
+					ifconfig br0 $default_ipaddr_sta up
+				fi
+			else
+				apflag=sta
+			fi
+			;;
+
+		*)	start_dhcp=0
+			if [ $# -lt 1 ]
+			then
+				apflag=`get_wifi_config wifi0 mode`
+			else
+				apflag=$1
+			fi
+			;;
+		esac
+		wifi_mode="$apflag"
+	fi
+}
+
+run_pktlogger_d() {
+	echo_with_logging "Starting pktlogger daemon"
+
+	pktlogger_d_cmd="/usr/sbin/pktlogger_d"
+	if [ -f $pktlogger_d_cmd ]
+	then
+		# attach to bridge interface if daemon needs to connect to pktlogger proxy
+		if is_platform_rgmii || [ -e /sys/class/net/pcie0 ]
+		then
+			pktlogger_d_cmd="$pktlogger_d_cmd -i br0"
+		fi
+
+		$pktlogger_d_cmd &
+	fi
+}
+
+if [ "${STATELESS}" = "y" ] && [ $(get_bootval vlan) = "0" ]
+then
+	if [ ! -f ${base_persistent_files}/ipaddr_changed ]
+	then
+		# IP address was not configured by host
+		# remove temporary file
+		rm ${base_persistent_files}/ipaddr
+	fi
+	ipaddr_process
+	ifconfig br0 up "${ipaddress}" netmask "${netmask_addr}"
+fi
+
+start_mode="runtime"
+auc_fw_type="default"
+
+mu=`get_wifi_config wifi0 mu`
+if [ $? -ne 0 -o "$mu" == "0" ]; then
+	mu=0
+	fw_no_mu=`get_wifi_config wifi0 fw_no_mu`
+	if [ $? -ne 0 -o "$fw_no_mu" == "1" ]; then
+		auc_fw_type="nomu"
+	fi
+else
+	mu=1
+	fw_no_mu=`get_wifi_config wifi0 fw_no_mu`
+	if [ $? -eq 0 -a "$fw_no_mu" == "1" ]; then
+		echo "ERROR: mu=1 conflicts with fw_no_mu=1, using MU-enabled build"
+	fi
+fi
+
+$base_scripts/load-qdrv qtn_ruby "$start_mode" $en_tqe_sem $auc_fw_type
+
+if [ -f /sbin/qserv ]
+then
+	echo "set wbsp_ctrl 1" > /sys/devices/qdrv/control
+	emac_swap=`get_bootval emac_swap`
+	if [ "$emac_swap" == "1" ] ; then
+		echo "2" > /sys/class/net/eth1_0/device_emacx_wbsp_ctrl
+	else
+		echo "1" > /sys/class/net/eth1_0/device_emacx_wbsp_ctrl
+	fi
+else
+	if [ $wps_push_button_gpio != "disabled" ]
+	then
+		call_qcsapi -u -q enable_wps_push_button $wps_push_button_gpio 0
+	fi
+fi
+
+if [ -e /sys/devices/pm_interval/configure ]
+then
+	echo "add 15_min 900"  >/sys/devices/pm_interval/configure
+	echo "add 1_hr 3600"   >/sys/devices/pm_interval/configure
+	echo "add 24_hr 86400" >/sys/devices/pm_interval/configure
+fi
+
+do_staticip=`get_wifi_config wifi0 staticip`
+if [ $? -ne 0 -o "$do_staticip" != "1" ]
+then
+	do_staticip=0
+	start_dhcp=1
+else
+	start_dhcp=0
+fi
+
+platform_file=/scripts/platform_id
+if [ -f $platform_file ]; then
+	platform_id=`cat $platform_file`
+else
+	platform_id=00
+fi
+
+if [ "$platform_id" == "425" ]
+then
+	echo "Ericsson Mediaroom production image"
+	do_staticip=1
+	start_dhcp=0
+	a=`date '+%s'`
+	b=`expr $a % 256`
+	default_ipaddr_sta=169.254.0.$b
+	ifconfig br0 $default_ipaddr_sta up
+fi
+
+gw_dns_process
+
+wifi_macaddr_configure
+echo "set mac0addr" $mac0addr > /sys/devices/qdrv/control
+
+generate_power_checksum
+qtn_power_select
+
+echo "start" > /sys/devices/qdrv/control
+
+select_wifi_mode
+
+if [ "$qfdr_platform" = "1" ]; then
+	qfdr_eventd &
+fi
+
+$base_scripts/start-vap "$wifi_mode"
+
+# Launch qserver managment daemon
+local_qserver=`get_wifi_config wifi0 qserver`
+if [ $? -ne 0 ]
+then
+	local_qserver="1"
+fi
+
+if [ "$local_qserver" == "1" ]
+then
+	qserver -B -i wifi0 -D quantenna
+fi
+
+# Store the core dump, if it exists
+$base_scripts/store_core_dump
+
+dhcpv6=`get_wifi_config wifi0 dhcpv6`
+if [ "$dhcpv6" == "1" ]
+then
+	echo "Enable DHCPv6 Client"
+	ipv6-mgmt br0 &
+fi
+
+# watchdog reboot debug
+if [ -f /var/www/soc_event_cntr.php ]
+then
+	/usr/lib/cgi-bin/php-cgi -q /var/www/soc_event_cntr.php
+fi
+
+# Monitor the Reset Device push button if so configured.
+# GPIO pin is 5 (reset_device_push_button, defined above) and is Active High.
+monitor_reset=`get_wifi_config wifi0 monitorreset`
+if [ $? -eq 0 -a "$monitor_reset" == "1" ] && [ ! -e /proc/amber ]
+then
+	echo "monitor reset button"
+	monitor_reset_device $reset_device_gpio 0 &
+fi
+
+monitor_rfenable=`get_wifi_config wifi0 monitorrfenable`
+if [ $? -eq 0 -a "$monitor_rfenable" == "1" ] || [ -e /proc/amber ]
+then
+	echo "monitor rfenable switch"
+	monitor_rfenable $rfenable_gpio 1 &
+fi
+
+# program LEDs based on WPS, association, etc.
+activate_leds=`get_wifi_config wifi0 leds`
+if [ $? -eq 0 -a "$activate_leds" == "1" ]
+then
+	echo "monitor led"
+	monitor_wifi &
+fi
+
+# non WPS pair protection
+if [ "$wifi_mode" == "sta" ]
+then
+	pp_enable=$(call_qcsapi -u get_bootcfg_param pp_enable)
+	if [ $? -eq 0 ]
+	then
+		if [ "$pp_enable" == "1" ]
+		then
+			echo "set non WPS pp enable"
+			call_qcsapi -u set_non_wps_pp_enable wifi0 1
+		fi
+	else
+		if [ -f /sbin/qserv ]
+		then
+			dev_name=$(call_qcsapi -u get_bootcfg_param device_name)
+			if [ $? -eq 0 ]
+			then
+				echo "set non WPS pp enable"
+				call_qcsapi -u set_non_wps_pp_enable wifi0 1
+			fi
+		fi
+	fi
+fi
+
+# restrict TX data to a non-responsive station
+if [ "$wifi_mode" == "ap" ]
+then
+	tx_restrict=`get_wifi_config wifi0 tx_restrict`
+	if [ $? -ne 0 -o "$tx_restrict" != "0" ]
+	then
+		iwpriv wifi0 tx_restrict 1
+	fi
+fi
+
+# Power management. Enable by default in some regions only.
+$base_scripts/qpm_setup
+reg_region=`get_wifi_config wifi0 region`
+if [ $? -ne 0 ] ; then
+	reg_region="none"
+fi
+
+country_list_eu="eu be bg cz dk de ee ie es fr gr hr it cy lv lt lu hu mt nl at pl pt ro si sk fi se gb ch tr"
+reg_region_lower=`echo "$reg_region" | awk '{ print tolower($0) }'`
+
+pm=`get_wifi_config wifi0 pm`
+if [ $? -eq 0 ] ; then
+	call_qcsapi -q pm $pm
+elif list_contains $reg_region_lower $country_list_eu ; then
+	call_qcsapi -q pm auto
+else
+	call_qcsapi -q pm off
+fi
+
+if [ -e ${base_jffs2}/tx_pd_gather_data.sh ]; then
+	echo "Running default Tx PD gather 120 seconds per channel"
+	${base_jffs2}/tx_pd_gather_data.sh 12 10 "100 36 100 44 157 36 157 44" &
+fi
+
+# Done, free memory
+free_boot_memory
+set_sys_status complete
+
+qdrvcmd get 0 info_log
+
+#enable dprintk
+echo 1 > /proc/sys/kernel/dprintk_en
+# start the custom initialization script
+if [ -f /mnt/jffs2/tweak_qcomm ]
+then
+	/mnt/jffs2/tweak_qcomm &
+fi
+
+if [ -e $base_scripts/post ] ; then
+	$base_scripts/post
+fi
+
+$base_scripts/carrier_setup
+$base_scripts/pdtuner_setup $wifi_mode $reg_region &
+
+if [ "${STATELESS}" = "y" -a "$platform_id" != "482" ]
+then
+	call_qcsapi set_security_defer_mode wifi0 1
+fi
+
+# activate WFA-favourable settings and start Sigma CA
+start_sigma_ca=`get_wifi_config wifi0 wfa`
+if [ $? -eq 0 -a "$start_sigma_ca" == "1" ]
+then
+	call_qcsapi wfa_cert 1
+fi
+
+if [ "$mu" == "0" ]
+then
+	mu disable
+else
+	# Default - no parameter present, enable, or if set to nonzero value.
+	mu enable
+fi
+
+echo 1 > /tmp/is_startprod_done
+
+run_pktlogger_d
+
+qrpe_start_script="/scripts/start_qrpe"
+if [ -f $qrpe_start_script ]
+then
+	$qrpe_start_script start
+fi
+
+qdock_start_script="/scripts/start_qdock"
+if [ -f $qdock_start_script ]
+then
+	$qdock_start_script start
+fi
+
+if [ "$qfdr_platform" = "1" ]; then
+	if [ "$wifi_mode" = "repeater" ]; then
+		# Disable DFS by default because AP interface is disabled by default in QFDR
+		iwpriv wifi0 markdfs 0
+	fi
+	load_qfdr
+fi
+
+# PTA
+pta=`get_wifi_config wifi0 pta`
+if [ $? -eq 0 ]
+then
+
+	pta_req_pol=`get_wifi_config wifi0 pta_req_pol`
+	if [ $? -eq 1 ]
+	then
+		echo_with_logging "PTA request polarity set to default : ACTIVE LOW"
+	else
+		echo_with_logging "PTA request polarity set to $pta_req_pol"
+		call_qcsapi -q -u set_pta_param wifi0 request_polarity $pta_req_pol
+	fi
+
+	pta_gnt_pol=`get_wifi_config wifi0 pta_gnt_pol`
+	if [ $? -eq 1 ]
+	then
+		echo_with_logging "PTA grant polarity set to default : ACTIVE LOW"
+	else
+		echo_with_logging "PTA grant polarity set to $pta_gnt_pol"
+		call_qcsapi -q -u set_pta_param wifi0 grant_polarity $pta_gnt_pol
+	fi
+
+	if [ "$pta" == "2" ]
+	then
+		echo_with_logging "PTA enabled in $pta-wire mode"
+		call_qcsapi -q -u set_pta_param wifi0 mode $pta
+	else
+		echo_with_logging "PTA disabled"
+	fi
+else
+	echo_with_logging "PTA disabled"
+fi
+
+if [ ! -f /tmp/_reload_mode_temp ]; then
+	backup_wireless_config
+fi

@@ -1,0 +1,7 @@
+#!/bin/sh
+
+qtn_env_file=/tmp/qtn_env_file
+
+if [ -f $qtn_env_file ]; then
+	. $qtn_env_file
+fi

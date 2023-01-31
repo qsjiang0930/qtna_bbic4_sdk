@@ -1,0 +1,50 @@
+#!/bin/sh
+
+. import_qtnenv
+
+csa_mark_file=/tmp/.qfdr_csa
+
+switch_role() {
+	# local: disconnect from AP and reconnect after 3 seconds, enable AP
+	# The reason why we don't disable STA here is:
+	# If main AP switch from channel 36 to 149 with reboot, then boot with channel 36,
+	# FDR cannot connect to main AP in this case
+	wpa_cli disconnect > /dev/null
+	wpa_cli reconnect 3000 > /dev/null
+	qfdr_ap enable non_dfs
+
+	# remote: disable ap, enable sta with option noscan
+	perform_cmd_on_remote "qfdr_ap disable"
+	perform_cmd_on_remote "qfdr_sta enable noscan"
+}
+
+mark() {
+	mkdir $csa_mark_file
+	sleep 5
+	rmdir $csa_mark_file
+}
+
+check_mark() {
+	if [ -d $csa_mark_file ]; then
+		return 0
+	fi
+	return 1
+}
+
+case "$1" in
+switch_role)
+	switch_role
+	;;
+mark)
+	mark
+	;;
+check_mark)
+	check_mark
+	;;
+*)
+	echo "$0: Bad parameters: $@" > /dev/console
+	exit 1
+	;;
+esac
+
+exit $?

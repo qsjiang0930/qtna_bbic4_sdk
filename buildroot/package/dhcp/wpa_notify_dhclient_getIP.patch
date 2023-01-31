@@ -1,0 +1,21 @@
+--- dhcp-4.1-ESV-R3_ORIG/client/dhclient.c	2019-01-29 15:26:49.293269115 +0800
++++ dhcp-4.1-ESV-R3/client/dhclient.c	2019-01-29 15:30:48.629259376 +0800
+@@ -97,6 +97,7 @@
+ static int check_domain_name_list(const char *ptr, size_t len, int dots);
+ static int check_option_values(struct universe *universe, unsigned int opt,
+ 			       const char *ptr, size_t len);
++void client_location_changed ();
+ 
+ int
+ main(int argc, char **argv) {
+@@ -152,6 +153,10 @@
+ 		log_fatal("Can't set up signal handler");
+ 	}
+ 
++	if (dhcp_handle_signal(SIGUSR1, client_location_changed) != ISC_R_SUCCESS) {
++		log_fatal("Can't set up signal SIGUSR1 handler ");
++	}
++
+ 	/* Set up the OMAPI. */
+ 	status = omapi_init();
+ 	if (status != ISC_R_SUCCESS)

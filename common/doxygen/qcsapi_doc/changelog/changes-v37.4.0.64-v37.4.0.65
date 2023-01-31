@@ -1,0 +1,22 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_64_TO_v37_4_0_65 Version v37.4.0.64 to version v37.4.0.65 changes
+ *
+ * \subsection v37_4_0_64_TO_v37_4_0_65Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.64 and v37.4.0.65
+ * \li \ref qcsapi_wifi_get_results_AP_scan_by_scs
+ * \li \ref qcsapi_wifi_set_scs_sample_type
+ *
+ * \subsection v37_4_0_64_TO_v37_4_0_65Proto Function prototype changes
+ *
+ * The following function prototypes were modified between versions v37.4.0.64 and v37.4.0.65
+ *  - \ref qcsapi_get_app_core_dump
+ *    - Old prototype: int qcsapi_get_app_core_dump(char *file, string_4096 buf, uint32_t bytes_to_copy, uint32_t offset, uint32_t *bytes_copied);
+ *    - New prototype: int qcsapi_get_app_core_dump(const char *file, string_4096 buf, uint32_t bytes_to_copy, uint32_t offset, uint32_t *bytes_copied);
+ *  - \ref qcsapi_get_app_core_dump_size
+ *    - Old prototype: int qcsapi_get_app_core_dump_size(char *file, uint32_t *core_dump_size);
+ *    - New prototype: int qcsapi_get_app_core_dump_size(const char *file, uint32_t *core_dump_size);
+ */
+

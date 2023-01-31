@@ -1,0 +1,11 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_87_TO_v37_4_0_88 Version v37.4.0.87 to version v37.4.0.88 changes
+ *
+ * \subsection v37_4_0_87_TO_v37_4_0_88Removed Removed functions
+ *
+ * The following functions were removed between versions v37.4.0.87 and v37.4.0.88
+ * \li \ref qcsapi_wifi_set_scs_nac_monitor_mode
+ */
+

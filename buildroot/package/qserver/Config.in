@@ -1,0 +1,5 @@
+config BR2_PACKAGE_QSERVER
+	bool "Quantenna private connections management server"
+	default y
+	help
+	  A server to manage Quantenna private connections

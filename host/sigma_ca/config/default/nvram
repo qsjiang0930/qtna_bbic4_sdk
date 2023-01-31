@@ -1,0 +1,3 @@
+# path to non volatile memory (flash-card)
+nvram_path=/mnt
+

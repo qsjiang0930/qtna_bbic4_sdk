@@ -1,0 +1,17 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_127_TO_v37_4_0_128 Version v37.4.0.127 to version v37.4.0.128 changes
+ *
+ * \subsection v37_4_0_127_TO_v37_4_0_128Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.127 and v37.4.0.128
+ * \li \ref qcsapi_util_str_to_int32
+ * \li \ref qcsapi_util_str_to_uint32
+ *
+ * \subsection v37_4_0_127_TO_v37_4_0_128Removed Removed functions
+ *
+ * The following functions were removed between versions v37.4.0.127 and v37.4.0.128
+ * \li \ref qcsapi_str_to_uint32
+ */
+

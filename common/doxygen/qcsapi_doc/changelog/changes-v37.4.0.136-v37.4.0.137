@@ -1,0 +1,18 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_136_TO_v37_4_0_137 Version v37.4.0.136 to version v37.4.0.137 changes
+ *
+ * \subsection v37_4_0_136_TO_v37_4_0_137Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.136 and v37.4.0.137
+ * \li \ref qcsapi_wifi_del_11r_neighbour_str
+ * \li \ref qcsapi_wifi_set_ieee80211r_nas_id_str
+ * \li \ref qcsapi_wifi_set_ieee80211r_mobility_domain_str
+ * \li \ref qcsapi_wifi_scs_obss_check_enable
+ * \li \ref qcsapi_wifi_set_ieee80211r_str
+ * \li \ref qcsapi_wifi_set_ieee80211r_ft_over_ds_str
+ * \li \ref qcsapi_wifi_add_11r_neighbour_str
+ * \li \ref qcsapi_wifi_set_11r_r1_key_holder_str
+ */
+

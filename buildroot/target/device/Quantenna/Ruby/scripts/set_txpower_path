@@ -1,0 +1,17 @@
+#!/bin/sh
+dev=0
+vap=wifi$dev
+
+if [ $# -ge 1 ]
+then
+	fpath=$1
+else
+	fpath="0"
+fi
+
+echo "set opt_txpower_path $fpath" > /sys/devices/qdrv/control
+echo "get $dev opt_txpower_path" > /sys/devices/qdrv/control
+fpath=`cat /proc/qdrvdata`
+
+echo "qdrv opt_txpower_path: $fpath"
+call_qcsapi reg_chan_txpower_path_get $vap

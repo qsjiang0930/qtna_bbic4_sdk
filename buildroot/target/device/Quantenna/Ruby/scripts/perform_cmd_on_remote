@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Important: the remote command invoked must print some output to stdio, otherwise, perform_cmd_on_remote will block because nc is waiting for the response
+
+. import_qtnenv
+
+if [ ! -f /tmp/.nc_established ]; then
+	if [ "$(echo "echo hello" | nc $qfdr_remote_ip $nc_port -c 1)" = "hello" ]; then
+		touch /tmp/.nc_established
+	else
+		echo "Error: cannot communicate with remote nc server $qfdr_remote_ip $nc_port" > /dev/console
+		exit 1
+	fi
+fi
+
+echo "$1" | nc $qfdr_remote_ip $nc_port

@@ -1,0 +1,142 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+
+. ${base_scripts}/start-helpers.sh
+. import_qtnenv
+
+remote_qcsapi="call_qcsapi_sockrpc --host $qfdr_remote_ip"
+
+echo_with_logging "=== Waiting for slave to boot up"
+timeout=$((`date +%s` + 60))
+while true
+do
+	$remote_qcsapi get_macaddr br0 1>/dev/null 2>1
+	if [ $? -eq 0 ]; then
+		break
+	fi
+	sleep 1
+
+	if [ `date +%s` -ge $timeout ]; then
+		echo_with_logging "=== Just start prod on master due to remote is unreachable"
+		start-prod
+		call_qcsapi set_br_isolate vlan $qfdr_mgnvlan
+		exit
+	fi
+done
+
+qfdr_slavealive_monitor &
+
+# slave already boot up, delete u-boot.bin and topaz-linux.lzma.img from /etc/firmware/ and stop tftpd to save memory
+rm -f /etc/firmware/ep/u-boot.bin
+rm -f /etc/firmware/ep/topaz-linux.lzma.img
+/etc/init.d/S80tftpd-hpa stop
+
+if [ "$(get_qfdr_running_mode)" != "Access point" ]; then
+	update_wifi_config wifi0 mode repeater
+	# darken link indication LED
+	call_qcsapi_sockrpc --host $qfdr_remote_ip set_led 16 0
+	call_qcsapi_sockrpc --host $qfdr_remote_ip set_led 1 0
+
+else
+	update_wifi_config wifi0 mode ap
+fi
+
+remote_stateless=$(perform_cmd_on_remote "grep -o "STATELESS=*" /scripts/build_config | cut -d= -f2")
+if [ "$remote_stateless" = "" ]; then
+	remote_stateless=$(perform_cmd_on_remote "grep -o 'stateless=[0-9]*' /proc/cmdline | cut -d= -f2")
+fi
+if [ "$remote_stateless" != "y" -a "$remote_stateless" != "1" ]; then
+	echo_with_logging "=== Just start prod on master due to remote is not stateless mode"
+	start-prod
+	call_qcsapi set_br_isolate vlan $qfdr_mgnvlan
+	exit
+fi
+
+# add Universally Unique IDentifier for the device.
+uuid_path=/proc/sys/kernel/random/uuid
+uuid_default=12345678-9abc-def0-1234-56789abc1234
+if [ -f $uuid_path ]; then
+	uuid_str=`cat $uuid_path 2>/dev/null`
+else
+	uuid_str=$uuid_default
+fi
+
+# check uuid whether exsit in supplicant config file, add or update it.
+supp_cfg_file=wpa_supplicant.conf
+supp_cfg_path=${persistent_path}/${supp_cfg_file}
+if [ -f $supp_cfg_path ]; then
+	if grep -q "uuid=" ${supp_cfg_path}
+	then
+		echo_with_logging "=== uuid already exsit, use new uuid update it"
+		sed -i "s:^uuid=.*$:uuid=$uuid_str:g" ${supp_cfg_path}
+	else
+		sed -i "s/.*update_config.*/uuid=$uuid_str\n&/" ${supp_cfg_path}
+	fi
+else
+	echo_with_logging "=== Warning: the default $supp_cfg_path file not exsit"
+fi
+
+echo_with_logging "=== Ask slave to sync qfdr.conf"
+perform_cmd_on_remote "qfdr_sync_config qfdr"
+
+echo_with_logging "=== Ask slave to sync qfdr.mode"
+perform_cmd_on_remote "qfdr_sync_config specify /tmp/qfdr_running_mode"
+
+echo_with_logging "=== Ask slave to sync wireless_conf.txt"
+perform_cmd_on_remote "qfdr_sync_config wireless"
+
+# avoid slave using default configure to assoc rap
+echo_with_logging "=== Ask slave to sync wpa_supplicant.conf"
+perform_cmd_on_remote "qfdr_sync_config supplicant"
+
+echo_with_logging "=== Ask slave to sync hostapd.conf"
+perform_cmd_on_remote "qfdr_sync_config hostapd"
+
+echo_with_logging "=== Ask slave to sync 2.4G config"
+perform_cmd_on_remote "qfdr_sync_config qwe"
+
+if [ -f $persistent_path/bsa_conf.txt ]; then
+	echo_with_logging "=== Ask slave to sync bsa_conf.txt"
+	perform_cmd_on_remote "qfdr_sync_config specify $persistent_path/bsa_conf.txt"
+fi
+
+if [ -f $persistent_path/power_selection ]; then
+	echo_with_logging "=== Ask slave to sync power selection"
+	perform_cmd_on_remote "qfdr_sync_config specify $persistent_path/power_selection"
+fi
+
+$remote_qcsapi update_config_param wifi0 staticip 1
+$remote_qcsapi update_config_param wifi0 channel 0
+
+echo_with_logging "=== Running start-prod"
+$remote_qcsapi startprod
+start-prod &
+
+# Maybe the qserver have not running, and ctrl interface have not be established, should waiting
+timeout=$((`date +%s` + 30))
+while [ `date +%s` -le $timeout ]
+do
+	if [ `$remote_qcsapi is_startprod_done wifi0` -eq 1 ]; then
+		break;
+	fi
+	sleep 1
+done
+$remote_qcsapi set_br_isolate vlan $qfdr_mgnvlan
+call_qcsapi set_br_isolate vlan $qfdr_mgnvlan
+
+if [ "$(get_qfdr_running_mode)" = "Access point" ]; then
+	$remote_qcsapi rfenable 1
+	$remote_qcsapi qwe qweaction wlan1 up
+	# lighten link indication LED
+	call_qcsapi_sockrpc --host $qfdr_remote_ip set_led 16 1
+	call_qcsapi_sockrpc --host $qfdr_remote_ip set_led 1 1
+fi
+
+if [ "$qfdr_hw_pbc_on_board" = "y" ]; then
+	if [ "$(get_qfdr_running_mode)" = "Access point" ]; then
+		hostapd_cli ignore_hw_pbc 1
+	else
+		wpa_cli ignore_hw_pbc 1
+	fi
+fi

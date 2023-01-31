@@ -1,0 +1,13 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_163_TO_v37_4_0_164 Version v37.4.0.163 to version v37.4.0.164 changes
+ *
+ * \subsection v37_4_0_163_TO_v37_4_0_164Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.163 and v37.4.0.164
+ * \li \ref qcsapi_show_wps_pbc_ssid_filters
+ * \li \ref qcsapi_add_wps_pbc_ssid_filter
+ * \li \ref qcsapi_del_wps_pbc_ssid_filter
+ */
+

@@ -1,0 +1,62 @@
+#!/bin/sh
+
+base_scripts="/scripts"
+base_jffs2="/mnt/jffs2"
+
+. $base_scripts/start-helpers.sh
+. import_qtnenv
+
+echo_with_logging "Starting Qlink configuration.."
+
+auc_fw_type="default"
+
+mu=`get_wifi_config wifi0 mu`
+if [ $? -ne 0 -o "$mu" == "0" ]; then
+	mu=0
+	fw_no_mu=`get_wifi_config wifi0 fw_no_mu`
+	if [ $? -ne 0 -o "$fw_no_mu" == "1" ]; then
+		auc_fw_type="nomu"
+	fi
+else
+	mu=1
+	fw_no_mu=`get_wifi_config wifi0 fw_no_mu`
+	if [ $? -eq 0 -a "$fw_no_mu" == "1" ]; then
+		echo "ERROR: mu=1 conflicts with fw_no_mu=1, using MU-enabled build"
+	fi
+fi
+
+$base_scripts/load-qdrv qtn_ruby runtime $en_tqe_sem $auc_fw_type
+
+if [ -e /sys/devices/pm_interval/configure ]
+then
+	echo "add 15_min 900"  > /sys/devices/pm_interval/configure
+	echo "add 1_hr 3600"   > /sys/devices/pm_interval/configure
+	echo "add 24_hr 86400" > /sys/devices/pm_interval/configure
+fi
+
+
+wifi_macaddr_configure
+echo "set mac0addr" $mac0addr > /sys/devices/qdrv/control
+echo "set mac0addr $mac0addr"
+
+generate_power_checksum
+qtn_power_select
+
+echo "start" > /sys/devices/qdrv/control
+
+modprobe hw_rev
+modprobe wlan_scan_ap
+modprobe wlan_scan_sta
+modprobe aes_generic
+modprobe qlink-ep
+
+# Done, free memory
+free_boot_memory
+set_sys_status complete
+
+# start the custom initialization script
+if [ -f /mnt/jffs2/tweak_qcomm ]
+then
+	/mnt/jffs2/tweak_qcomm &
+fi
+

@@ -1,0 +1,12 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_112_TO_v37_4_0_113 Version v37.4.0.112 to version v37.4.0.113 changes
+ *
+ * \subsection v37_4_0_112_TO_v37_4_0_113Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.112 and v37.4.0.113
+ * \li \ref qcsapi_pta_get_parameter
+ * \li \ref qcsapi_pta_set_parameter
+ */
+

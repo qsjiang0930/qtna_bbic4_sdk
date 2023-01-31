@@ -1,0 +1,19 @@
+/**
+ * \page ChangeLog
+ *
+ * \section v37_4_0_97_TO_v37_4_0_98 Version v37.4.0.97 to version v37.4.0.98 changes
+ *
+ * \subsection v37_4_0_97_TO_v37_4_0_98Added Added functions
+ *
+ * The following functions were added between versions v37.4.0.97 and v37.4.0.98
+ * \li \ref qcsapi_radio_set_3addr_br_config
+ * \li \ref qcsapi_wifi_set_scs_band_margin
+ * \li \ref qcsapi_wifi_set_scs_band_margin_check
+ * \li \ref qcsapi_get_core_dump2
+ * \li \ref qcsapi_wifi_create_bss_with_ifstate
+ * \li \ref qcsapi_radio_get_3addr_br_config
+ * \li \ref qcsapi_wifi_set_wea_cac_en
+ * \li \ref qcsapi_wifi_scs_pmbl_smth_enable
+ * \li \ref qcsapi_wifi_scs_pick_best_channel
+ */
+

@@ -1,0 +1,17 @@
+about_resource: u-boot
+name: u-boot bootloader
+version: 1.4.10
+homepage_url: http://www.denx.de/wiki/U-Boot/WebHome
+description: Provides the bootloader functionality to initialise the SoC at power-on and boot into
+    Linux on the LHost CPU. This executable sits at the start of flash
+    and is the first software run on the SoC after power on
+
+license_name: GNU General Public License Version 2
+license_expression: gpl-2.0
+license_file: COPYING
+
+copyright: See CREDITS
+
+redistribute: y
+attribute: y
+modified: y
